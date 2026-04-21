@@ -1,59 +1,111 @@
 package model;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
-public class Message {
+// Message est la classe de base pour tous les messages de l'application.
+// Elle est Serializable pour pouvoir être envoyée via les Sockets TCP.
+// Elle est abstraite car on n'envoie jamais un "Message" générique —
+// on envoie toujours soit un message texte, soit un fichier (FileMessage).
+//
+// MAIS ATTENTION : dans notre cas on la garde NON abstraite
+// pour pouvoir créer des messages texte directement.
 
-    // ============ ATTRIBUTS ============
+public class Message implements Serializable {
 
-    private String id;
-    private String content;
-    private User sender;
-    private User receiver;
-    private Date timestamp;
-    private MessageType type;
+    // Nécessaire pour la sérialisation réseau
+    // C'est un identifiant de version de la classe
+    private static final long serialVersionUID = 1L;
 
-    // ============ CONSTRUCTEUR ============
+    // ============================================================
+    // ATTRIBUTS (correspondent exactement au diagramme de classes)
+    // ============================================================
 
-    public Message(String id, String content, User sender,
-                   User receiver, MessageType type) {
+    // Identifiant unique du message
+    protected String id;
+
+    // Le contenu textuel du message (ex: "Bonjour !")
+    protected String content;
+
+    // L'utilisateur qui envoie le message
+    protected User sender;
+
+    // L'utilisateur qui reçoit le message
+    protected User receiver;
+
+    // La date et heure d'envoi du message
+    protected Date timestamp;
+
+    // Le type du message (TEXT, FILE, PHOTO, AUDIO_CALL, VIDEO_CALL)
+    protected MessageType type;
+
+    // true = le destinataire a lu le message, false = non lu
+    protected boolean isRead;
+
+    // ============================================================
+    // CONSTRUCTEUR
+    // ============================================================
+
+    // Constructeur principal pour créer un nouveau message
+    // L'id est généré automatiquement
+    public Message(String content, User sender, User receiver, MessageType type) {
+        this.id = UUID.randomUUID().toString(); // Id unique généré automatiquement
+        this.content = content;
+        this.sender = sender;
+        this.receiver = receiver;
+        this.timestamp = new Date(); // Date et heure actuelles automatiquement
+        this.type = type;
+        this.isRead = false; // Par défaut le message n'est pas lu
+    }
+
+    // Constructeur secondaire : utilisé quand on charge un message depuis la BD
+    // (l'id et le timestamp existent déjà)
+    public Message(String id, String content, User sender, User receiver,
+                   Date timestamp, MessageType type) {
         this.id = id;
         this.content = content;
         this.sender = sender;
         this.receiver = receiver;
+        this.timestamp = timestamp;
         this.type = type;
-        this.timestamp = new Date(); // enregistre l'heure exacte d'envoi
+        this.isRead = false;
     }
 
-    // ============ METHODES ============
+    // ============================================================
+    // GETTERS ET SETTERS
+    // ============================================================
 
-    public void send() {
-        // sera connecte au Client pour l'envoi reel via le reseau
-        System.out.println("Message envoye de " + sender.getUsername()
-                + " vers " + receiver.getUsername()
-                + " : " + content);
+    public String getId() {
+        return id;
     }
 
     public String getContent() {
         return content;
     }
 
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
-    // ============ GETTERS ET SETTERS ============
-
-    public String getId() {
-        return id;
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public User getSender() {
         return sender;
     }
 
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
     public User getReceiver() {
         return receiver;
+    }
+
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
     }
 
     public MessageType getType() {
@@ -64,21 +116,26 @@ public class Message {
         this.type = type;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public boolean isRead() {
+        return isRead;
     }
 
-    // ============ TOSTRING ============
+    public void setRead(boolean isRead) {
+        this.isRead = isRead;
+    }
 
+    // ============================================================
+    // MÉTHODE toString()
+    // ============================================================
     @Override
     public String toString() {
         return "Message{" +
                 "id='" + id + '\'' +
-                ", de=" + sender.getUsername() +
-                ", vers=" + receiver.getUsername() +
-                ", contenu='" + content + '\'' +
+                ", content='" + content + '\'' +
+                ", sender=" + sender.getUsername() +
+                ", receiver=" + receiver.getUsername() +
+                ", timestamp=" + timestamp +
                 ", type=" + type +
-                ", heure=" + timestamp +
                 '}';
     }
 }
