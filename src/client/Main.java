@@ -12,7 +12,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         // Créer le client
-        client = new Client("localhost", 5000);
+        client = new Client("172.20.10.3", 5000);
 
         // Créer la fenêtre de login
         LoginWindow loginWindow = new LoginWindow(client);
