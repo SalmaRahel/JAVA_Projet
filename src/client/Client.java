@@ -12,10 +12,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.List;
 
-public class
-
-
-Client implements Runnable {
+public class Client implements Runnable {
 
     private String serverIP;
     private int port;
