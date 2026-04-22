@@ -262,11 +262,18 @@ public class ChatWindow extends Application {
 
     // Appelée quand on clique sur un contact dans la liste
     private void onContactSelected(String username) {
-        // Mettre à jour le contact actuel
-        // On cherche l'utilisateur dans la liste
         System.out.println("💬 Contact sélectionné : " + username);
 
-        // Mettre à jour le label en haut
+        // Chercher l'utilisateur dans la liste connectés
+        if (client != null && client.getConnectedUsers() != null) {
+            for (User user : client.getConnectedUsers()) {
+                if (user.getUsername().equals(username)) {
+                    currentContact = user;
+                    break;
+                }
+            }
+        }
+
         Platform.runLater(() -> {
             contactLabel.setText("💬 " + username);
         });

@@ -11,6 +11,7 @@ import ui.LoginWindow;
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
+import java.util.ArrayList;
 
 public class Client implements Runnable {
 
@@ -24,6 +25,7 @@ public class Client implements Runnable {
     private ChatWindow chatWindow;
     private CallWindow callWindow;
     private Call currentCall;
+    private List<User> connectedUsers = new ArrayList<>();
 
     public Client(String serverIP, int port) {
         this.serverIP = serverIP;
@@ -42,6 +44,7 @@ public class Client implements Runnable {
 
                 } else if (received instanceof List) {
                     List<User> users = (List<User>) received;
+                    this.connectedUsers = users;
                     if (chatWindow != null) {
                         chatWindow.updateUserList(users);
                     }
@@ -98,6 +101,11 @@ public class Client implements Runnable {
         this.user = new User(username, password);
         sendObject(this.user);
         System.out.println("📤 Login envoyé : " + username);
+
+        // Démarrer le thread d'écoute IMMÉDIATEMENT après le login
+        Thread listenerThread = new Thread(this);
+        listenerThread.setDaemon(true);
+        listenerThread.start();
     }
 
     public void sendMessage(Message message) {
@@ -140,15 +148,20 @@ public class Client implements Runnable {
         if (command.equals("LOGIN_SUCCESS")) {
             System.out.println("✅ Login accepté !");
 
-            // Démarrer le thread d'écoute
-            Thread listenerThread = new Thread(this);
-            listenerThread.setDaemon(true);
-            listenerThread.start();
 
             // Ouvrir ChatWindow
             if (loginWindow != null) {
                 loginWindow.openChatWindow();
             }
+
+            new Thread(() -> {
+                try {
+                    Thread.sleep(500);
+                    sendObject("GET_USERS");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
 
         } else if (command.equals("LOGIN_FAILED")) {
             System.out.println("❌ Login refusé !");
@@ -194,6 +207,10 @@ public class Client implements Runnable {
 
     public Call getCurrentCall() {
         return currentCall;
+    }
+
+    public List<User> getConnectedUsers() {
+        return connectedUsers;
     }
 
     public static void main(String[] args) {
