@@ -164,6 +164,10 @@ public class Server {
                     + receiverUsername);
         }
 
+        System.out.println("💾 Sauvegarde message : "
+                + message.getSender().getId()
+                + " → " + message.getReceiver().getId());b
+
         // Sauvegarder dans la base de données
         DatabaseManager.saveMessage(message);
     }

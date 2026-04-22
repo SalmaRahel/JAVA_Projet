@@ -54,6 +54,9 @@ public class Client implements Runnable {
 
                 } else if (received instanceof String) {
                     handleServerCommand((String) received);
+                } else if (received instanceof User) {
+                    this.user = (User) received;
+                    System.out.println("✅ User mis à jour : " + user.getId());
                 }
             }
 

@@ -97,6 +97,7 @@ public class ClientHandler implements Runnable {
 
                     // Envoyer confirmation au client
                     sendObject("LOGIN_SUCCESS");
+                    sendObject(dbUser);
                     sendUserList(server.getConnectedUsers());
                     System.out.println("✅ Login réussi : "
                             + user.getUsername());
