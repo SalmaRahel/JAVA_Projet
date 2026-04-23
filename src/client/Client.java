@@ -150,7 +150,6 @@ public class Client implements Runnable {
         Platform.runLater(() -> {
             if (incomingCall.getStatus() == model.CallStatus.ACTIVE
                     && callWindow != null) {
-                // L'appel a été accepté → mettre à jour la fenêtre existante
                 callWindow.setCall(incomingCall);
                 callWindow.showIncoming();
 
@@ -158,23 +157,15 @@ public class Client implements Runnable {
                 CallWindow window = new CallWindow(this, incomingCall);
                 window.setCallerMode(false);
                 this.callWindow = window;
-
-                // Ouvrir dans un thread séparé pour éviter le conflit JavaFX
-                new Thread(() -> {
-                    Stage stage = new Stage();
-                    Platform.runLater(() -> {
-                        try {
-                            window.start(stage);
-                        } catch (Exception e) {
-                            System.out.println("❌ Erreur ouverture CallWindow : "
-                                    + e.getMessage());
-                        }
-                    });
-                }).start();
+                try {
+                    window.start(new Stage());
+                } catch (Exception e) {
+                    System.out.println("❌ Erreur ouverture CallWindow : "
+                            + e.getMessage());
+                }
 
             } else if (incomingCall.getStatus() == model.CallStatus.REFUSED
                     || incomingCall.getStatus() == model.CallStatus.ENDED) {
-                // Appel refusé ou terminé → fermer la fenêtre
                 if (callWindow != null) {
                     callWindow.onEndCall();
                 }
