@@ -73,6 +73,9 @@ public class AudioCall extends Call {
     // Cette méthode ouvre le microphone et commence à écouter
     public void captureAudio() {
         try {
+            if (audioFormat == null) {
+                audioFormat = new AudioFormat(44100, 16, 1, true, false);
+            }
             // DataLine.Info décrit le type de ligne audio qu'on veut
             // ici on veut une ligne de CAPTURE (microphone)
             DataLine.Info info = new DataLine.Info(
