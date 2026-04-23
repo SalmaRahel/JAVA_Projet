@@ -33,7 +33,7 @@ public class VideoCall extends Call {
 
     // OpenCVFrameGrabber = l'objet qui contrôle la webcam
     // C'est lui qui capture les images depuis la caméra physique
-    private OpenCVFrameGrabber videoCapture;
+    private transient OpenCVFrameGrabber videoCapture;
 
     // Largeur de la vidéo en pixels (640 = qualité standard)
     private int width;
@@ -50,7 +50,7 @@ public class VideoCall extends Call {
 
     // Convertisseur : transforme une Frame OpenCV en BufferedImage Java
     // Nécessaire car Java ne comprend pas directement le format OpenCV
-    private Java2DFrameConverter converter;
+    private transient Java2DFrameConverter converter;
 
     // ============================================================
     // CONSTRUCTEUR

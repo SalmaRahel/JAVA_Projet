@@ -333,7 +333,9 @@ public class CallWindow extends Application {
     private void onRefuseCall() {
         if (call != null) {
             call.refuse();
-            System.out.println("❌ Appel refusé !");
+            if (client != null) {
+                client.sendCallResponse(call); // ← ajouter ça
+            }
         }
         closeWindow();
     }
@@ -342,7 +344,9 @@ public class CallWindow extends Application {
     public void onEndCall() {
         if (call != null) {
             call.end();
-            System.out.println("🔴 Appel terminé !");
+            if (client != null) {
+                client.sendCallResponse(call); // ← ajouter ça
+            }
         }
         closeWindow();
     }

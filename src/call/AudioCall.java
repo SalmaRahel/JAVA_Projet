@@ -29,11 +29,11 @@ public class AudioCall extends Call {
     //   - Fréquence d'échantillonnage (44100 Hz = qualité CD)
     //   - Bits par échantillon (16 bits = bonne qualité)
     //   - Mono ou stéréo (1 = mono, 2 = stéréo)
-    private AudioFormat audioFormat;
+    private transient AudioFormat audioFormat;
 
     // TargetDataLine = le "fil" connecté au microphone
     // C'est via cet objet qu'on lit les données du micro
-    private TargetDataLine audioLine;
+    private transient TargetDataLine audioLine;
 
     // true = l'utilisateur a coupé son micro, false = micro actif
     private boolean isMuted;

@@ -198,7 +198,10 @@ public class ClientHandler implements Runnable {
             server.forwardCall(call, call.getCaller().getUsername());
 
         } else {
-            // Appel refusé ou terminé → notifier l'autre
+            // Appel refusé ou terminé → mettre à jour BD + notifier l'appelant
+            DatabaseManager.updateCallStatus(
+                    call.getId(), call.getStatus().name()
+            );
             server.forwardCall(call, call.getCaller().getUsername());
         }
     }
