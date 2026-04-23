@@ -124,27 +124,30 @@ public class AudioCall extends Call {
 
     // Jouer les données audio reçues depuis le réseau
     // data = les bytes reçus de l'autre utilisateur via le Socket
-    public void playAudio() {
+    // Changer la signature pour accepter les données reçues
+    public void playAudio(byte[] data) {
+        if (data == null || data.length == 0) return;
+
         try {
-            // DataLine.Info pour une ligne de LECTURE (haut-parleurs)
             DataLine.Info info = new DataLine.Info(
                     SourceDataLine.class, audioFormat
             );
 
-            // Ouvrir la ligne des haut-parleurs
             SourceDataLine speakerLine =
                     (SourceDataLine) AudioSystem.getLine(info);
             speakerLine.open(audioFormat);
             speakerLine.start();
 
-            System.out.println("🔊 Lecture audio démarrée !");
+            // ← écrire les données reçues dans les haut-parleurs
+            speakerLine.write(data, 0, data.length);
+            speakerLine.drain();
+            speakerLine.close();
 
         } catch (LineUnavailableException e) {
             System.out.println("❌ Haut-parleur non disponible : "
                     + e.getMessage());
         }
     }
-
     // Couper le microphone (mute)
     public void mute() {
         isMuted = true;

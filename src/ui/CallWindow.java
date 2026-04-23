@@ -37,7 +37,7 @@ public class CallWindow extends Application {
     // ============================================================
     // ATTRIBUTS
     // ============================================================
-
+    private boolean isCallEnded = false;
     // Référence au Client
     private Client client;
 
@@ -243,6 +243,7 @@ public class CallWindow extends Application {
 
         // Fermer proprement quand on ferme la fenêtre
         primaryStage.setOnCloseRequest(event -> {
+            event.consume();
             onEndCall();
         });
 
@@ -297,7 +298,10 @@ public class CallWindow extends Application {
                 case REFUSED:
                     // Appel terminé → fermer la fenêtre
                     statusLabel.setText("🔴 Appel terminé !");
-                    closeWindow();
+                    if (!isCallEnded) { // ← ne pas re-envoyer si on a déjà raccroché
+                        isCallEnded = true;
+                        closeWindow();
+                    }
                     break;
             }
         });
@@ -342,10 +346,13 @@ public class CallWindow extends Application {
 
     // Raccrocher
     public void onEndCall() {
+        if (isCallEnded) return; // ← guard
+        isCallEnded = true;
+
         if (call != null) {
             call.end();
             if (client != null) {
-                client.sendCallResponse(call); // ← ajouter ça
+                client.sendCallResponse(call);
             }
         }
         closeWindow();

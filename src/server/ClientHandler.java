@@ -183,7 +183,7 @@ public class ClientHandler implements Runnable {
                 + " | Statut : " + call.getStatus());
 
         if (call.getStatus() == model.CallStatus.PENDING) {
-            // Nouvel appel → envoyer au receiver
+            // Nouvel appel → sauvegarder + envoyer au receiver
             DatabaseManager.saveCall(
                     call.getId(),
                     call.getCaller().getId(),
@@ -198,11 +198,20 @@ public class ClientHandler implements Runnable {
             server.forwardCall(call, call.getCaller().getUsername());
 
         } else {
-            // Appel refusé ou terminé → mettre à jour BD + notifier l'appelant
+            // ENDED ou REFUSED → mettre à jour BD
             DatabaseManager.updateCallStatus(
                     call.getId(), call.getStatus().name()
             );
-            server.forwardCall(call, call.getCaller().getUsername());
+            // Notifier l'AUTRE personne (pas celui qui a raccroché)
+            String targetUsername;
+            if (call.getCaller().getUsername().equals(user.getUsername())) {
+                // C'est l'appelant qui a raccroché → notifier l'appelé
+                targetUsername = call.getCalled().getUsername();
+            } else {
+                // C'est l'appelé qui a raccroché → notifier l'appelant
+                targetUsername = call.getCaller().getUsername();
+            }
+            server.forwardCall(call, targetUsername);
         }
     }
 
