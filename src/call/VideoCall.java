@@ -62,7 +62,7 @@ public class VideoCall extends Call {
 
         // On initialise le grabber avec la caméra 0
         // (0 = première webcam détectée sur l'ordinateur)
-        this.videoCapture = new OpenCVFrameGrabber(0);
+        this.videoCapture = null;
 
         // Résolution standard 640x480 (suffisant pour un appel vidéo)
         this.width = 640;
@@ -93,6 +93,10 @@ public class VideoCall extends Call {
     // Démarrer la capture vidéo depuis la webcam
     public void captureVideo() {
         try {
+            if (videoCapture == null) {
+                videoCapture = new OpenCVFrameGrabber(0);
+            }
+
             // Configurer la résolution
             videoCapture.setImageWidth(width);
             videoCapture.setImageHeight(height);

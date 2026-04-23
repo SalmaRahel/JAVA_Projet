@@ -166,10 +166,24 @@ public class Server {
 
         System.out.println("💾 Sauvegarde message : "
                 + message.getSender().getId()
-                + " → " + message.getReceiver().getId());b
+                + " → " + message.getReceiver().getId());
 
         // Sauvegarder dans la base de données
         DatabaseManager.saveMessage(message);
+    }
+
+    // Transmettre un appel à un utilisateur cible
+    public synchronized void forwardCall(call.Call call, String targetUsername) {
+        ClientHandler targetHandler = clientMap.get(targetUsername);
+
+        if (targetHandler != null) {
+            targetHandler.sendObject(call);
+            System.out.println("📞 Appel transmis à : " + targetUsername
+                    + " | Statut : " + call.getStatus());
+        } else {
+            System.out.println("⚠️ Utilisateur cible non connecté : "
+                    + targetUsername);
+        }
     }
 
     // Envoyer des données audio à tous sauf l'expéditeur

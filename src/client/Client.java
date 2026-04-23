@@ -13,6 +13,9 @@ import java.net.Socket;
 import java.util.List;
 import java.util.ArrayList;
 
+import javafx.application.Platform;
+import javafx.stage.Stage;
+
 public class Client implements Runnable {
 
     private String serverIP;
@@ -50,7 +53,8 @@ public class Client implements Runnable {
                     }
 
                 } else if (received instanceof Call) {
-                    receiveCall();
+                    currentCall = (Call) received;
+                    receiveCall(currentCall);
 
                 } else if (received instanceof String) {
                     handleServerCommand((String) received);
@@ -138,11 +142,44 @@ public class Client implements Runnable {
                 + " vers " + target.getUsername());
     }
 
-    public void receiveCall() {
-        System.out.println("📞 Appel entrant !");
-        if (callWindow != null) {
-            callWindow.showIncoming();
-        }
+    public void receiveCall(Call incomingCall) {
+        System.out.println("📞 Appel entrant/mis à jour : "
+                + incomingCall.getCaller().getUsername()
+                + " | Statut : " + incomingCall.getStatus());
+
+        Platform.runLater(() -> {
+            if (incomingCall.getStatus() == model.CallStatus.ACTIVE
+                    && callWindow != null) {
+                // L'appel a été accepté → mettre à jour la fenêtre existante
+                callWindow.setCall(incomingCall);
+                callWindow.showIncoming();
+
+            } else if (incomingCall.getStatus() == model.CallStatus.PENDING) {
+                CallWindow window = new CallWindow(this, incomingCall);
+                window.setCallerMode(false);
+                this.callWindow = window;
+
+                // Ouvrir dans un thread séparé pour éviter le conflit JavaFX
+                new Thread(() -> {
+                    Stage stage = new Stage();
+                    Platform.runLater(() -> {
+                        try {
+                            window.start(stage);
+                        } catch (Exception e) {
+                            System.out.println("❌ Erreur ouverture CallWindow : "
+                                    + e.getMessage());
+                        }
+                    });
+                }).start();
+
+            } else if (incomingCall.getStatus() == model.CallStatus.REFUSED
+                    || incomingCall.getStatus() == model.CallStatus.ENDED) {
+                // Appel refusé ou terminé → fermer la fenêtre
+                if (callWindow != null) {
+                    callWindow.onEndCall();
+                }
+            }
+        });
     }
 
     private void handleServerCommand(String command) {
@@ -214,6 +251,10 @@ public class Client implements Runnable {
 
     public List<User> getConnectedUsers() {
         return connectedUsers;
+    }
+
+    public void sendCallResponse(call.Call call) {
+        sendObject(call);
     }
 
     public static void main(String[] args) {

@@ -179,23 +179,28 @@ public class ClientHandler implements Runnable {
     public void handleCall(call.Call call) {
         System.out.println("📞 Appel de "
                 + call.getCaller().getUsername()
-                + " → " + call.getCalled().getUsername());
+                + " → " + call.getCalled().getUsername()
+                + " | Statut : " + call.getStatus());
 
-        // Trouver le destinataire de l'appel
-        String calledUsername = call.getCalled().getUsername();
+        if (call.getStatus() == model.CallStatus.PENDING) {
+            // Nouvel appel → envoyer au receiver
+            DatabaseManager.saveCall(
+                    call.getId(),
+                    call.getCaller().getId(),
+                    call.getCalled().getId(),
+                    call.getCallType().name(),
+                    call.getStatus().name()
+            );
+            server.forwardCall(call, call.getCalled().getUsername());
 
-        // Sauvegarder l'appel dans la base de données
-        DatabaseManager.saveCall(
-                call.getId(),
-                call.getCaller().getId(),
-                call.getCalled().getId(),
-                call.getCallType().name(),
-                call.getStatus().name()
-        );
+        } else if (call.getStatus() == model.CallStatus.ACTIVE) {
+            // Appel accepté → notifier l'appelant
+            server.forwardCall(call, call.getCaller().getUsername());
 
-        // Notifier le destinataire de l'appel entrant
-        // (géré par le Server via broadcast)
-        server.notifyUserList();
+        } else {
+            // Appel refusé ou terminé → notifier l'autre
+            server.forwardCall(call, call.getCaller().getUsername());
+        }
     }
 
     // Traiter un appel entrant
@@ -230,7 +235,7 @@ public class ClientHandler implements Runnable {
 
     // Méthode générique pour envoyer n'importe quel objet
     // Tous les objets envoyés passent par cette méthode
-    private void sendObject(Object obj) {
+    public void sendObject(Object obj) {
         try {
             if (out != null) {
                 out.writeObject(obj);

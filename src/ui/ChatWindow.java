@@ -432,14 +432,17 @@ public class ChatWindow extends Application {
     private void openCallWindow() {
         Platform.runLater(() -> {
             try {
-                CallWindow callWindow = new CallWindow(
-                        client, client.getCurrentCall()
-                );
+                call.Call currentCall = client.getCurrentCall();
+                if (currentCall == null) return;
+
+                // L'appelant voit "En attente de réponse..."
+                // On crée sa fenêtre avec un statut spécial
+                CallWindow callWindow = new CallWindow(client, currentCall);
+                callWindow.setCallerMode(true); // ← mode appelant
                 client.setCallWindow(callWindow);
                 callWindow.start(new Stage());
             } catch (Exception e) {
-                System.out.println("❌ Erreur CallWindow : "
-                        + e.getMessage());
+                e.printStackTrace();
             }
         });
     }

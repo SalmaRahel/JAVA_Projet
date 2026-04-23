@@ -60,7 +60,7 @@ public class CallWindow extends Application {
     // État du micro et de la caméra
     private boolean isMuted = false;
     private boolean isCamOff = false;
-
+    private boolean isCallerMode = false;
     // ============================================================
     // CONSTRUCTEURS
     // ============================================================
@@ -76,6 +76,8 @@ public class CallWindow extends Application {
         this.client = client;
         this.call = call;
     }
+
+
 
     // ============================================================
     // MÉTHODE start() — Construction de l'interface
@@ -262,13 +264,23 @@ public class CallWindow extends Application {
 
             switch (call.getStatus()) {
                 case PENDING:
-                    // Appel en attente → montrer Accepter/Refuser
-                    statusLabel.setText("📞 Appel entrant...");
-                    acceptButton.setVisible(true);
-                    refuseButton.setVisible(true);
-                    endCallButton.setVisible(false);
-                    muteButton.setVisible(false);
-                    camButton.setVisible(false);
+                    if (isCallerMode) {
+                        // On est l'appelant → on attend la réponse
+                        statusLabel.setText("⏳ En attente de réponse...");
+                        acceptButton.setVisible(false);
+                        refuseButton.setVisible(false);
+                        endCallButton.setVisible(true);
+                        muteButton.setVisible(false);
+                        camButton.setVisible(false);
+                    } else {
+                        // On est le receiver → afficher Accepter/Refuser
+                        statusLabel.setText("📞 Appel entrant...");
+                        acceptButton.setVisible(true);
+                        refuseButton.setVisible(true);
+                        endCallButton.setVisible(false);
+                        muteButton.setVisible(false);
+                        camButton.setVisible(false);
+                    }
                     break;
 
                 case ACTIVE:
@@ -296,6 +308,11 @@ public class CallWindow extends Application {
         if (call != null) {
             call.accept();
             System.out.println("✅ Appel accepté !");
+
+            // Notifier l'appelant que l'appel est accepté
+            if (client != null) {
+                client.sendCallResponse(call);
+            }
 
             // Si c'est un appel vidéo → démarrer la caméra
             if (call instanceof VideoCall) {
@@ -409,6 +426,14 @@ public class CallWindow extends Application {
     // ============================================================
     // MÉTHODE MAIN — Pour tester CallWindow seule
     // ============================================================
+
+    public void setCall(Call call) {
+        this.call = call;
+    }
+
+    public void setCallerMode(boolean isCallerMode) {
+        this.isCallerMode = isCallerMode;
+    }
 
     public static void main(String[] args) {
         launch(args);
