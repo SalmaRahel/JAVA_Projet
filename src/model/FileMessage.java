@@ -23,7 +23,7 @@ public class FileMessage extends Message {
 
     // Nécessaire pour la sérialisation réseau
     private static final long serialVersionUID = 2L;
-
+    private byte[] fileData; // les bytes du fichier
     // ============================================================
     // ATTRIBUTS SUPPLÉMENTAIRES (propres à FileMessage)
     // ============================================================
@@ -50,20 +50,23 @@ public class FileMessage extends Message {
     // Pour créer un nouveau FileMessage, on a besoin :
     //   - des infos du Message parent (sender, receiver)
     //   - des infos du fichier (fileName, fileSize, fileType, filePath)
+    // Lire les bytes du fichier
     public FileMessage(User sender, User receiver,
                        String fileName, long fileSize,
                        String fileType, String filePath) {
-
-        // "super(...)" appelle le constructeur de la classe parent (Message)
-        // On passe le nom du fichier comme "content" du message
-        // et on met le type à FILE automatiquement
         super(fileName, sender, receiver, MessageType.FILE);
-
-        // On initialise les attributs propres à FileMessage
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.fileType = fileType;
         this.filePath = filePath;
+        // Lire le fichier en bytes
+        try {
+            this.fileData = java.nio.file.Files.readAllBytes(
+                    new java.io.File(filePath).toPath()
+            );
+        } catch (java.io.IOException e) {
+            this.fileData = new byte[0];
+        }
     }
 
     // Constructeur secondaire : pour charger depuis la base de données
@@ -115,6 +118,8 @@ public class FileMessage extends Message {
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
+
+    public byte[] getFileData() { return fileData; }
 
     // ============================================================
     // MÉTHODE UTILITAIRE

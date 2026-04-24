@@ -386,29 +386,81 @@ public class ChatWindow extends Application {
 
     public void sendFile() { onAttachFile(); }
 
+    private void openFile(model.FileMessage fm) {
+        try {
+            // Sauvegarder les bytes dans un fichier temporaire
+            java.io.File temp = new java.io.File(
+                    System.getProperty("java.io.tmpdir"), fm.getFileName()
+            );
+            java.nio.file.Files.write(temp.toPath(), fm.getFileData());
+
+            // Ouvrir avec le programme par défaut du système
+            java.awt.Desktop.getDesktop().open(temp);
+        } catch (java.io.IOException e) {
+            showAlert("Impossible d'ouvrir le fichier !");
+        }
+    }
+
+    private HBox createFileBubble(model.FileMessage fm, boolean isSent) {
+        Button fileBtn = new Button("📎 " + fm.getFileName()
+                + " (" + fm.getFileSizeFormatted() + ")");
+        fileBtn.setStyle(
+                "-fx-background-color: " + (isSent ? "#DCF8C6" : "white") + ";" +
+                        "-fx-padding: 8 12;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-cursor: hand;"
+        );
+        fileBtn.setOnAction(e -> openFile(fm));
+
+        HBox hbox = new HBox();
+        hbox.setAlignment(isSent ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        hbox.setPadding(isSent
+                ? new Insets(2, 10, 2, 50)
+                : new Insets(2, 50, 2, 10));
+        hbox.getChildren().add(fileBtn);
+        return hbox;
+    }
+
+    private String getFileType(File file) {
+        try {
+            String type = java.nio.file.Files.probeContentType(file.toPath());
+            return type != null ? type : "application/octet-stream";
+        } catch (java.io.IOException e) {
+            return "application/octet-stream";
+        }
+    }
+
     private void sendFile(File file) {
         if (currentContact == null) {
             showAlert("Sélectionnez d'abord un contact !");
             return;
         }
+
+        model.FileMessage fileMessage = new model.FileMessage(
+                client.getUser(),
+                currentContact,
+                file.getName(),
+                file.length(),
+                getFileType(file), // type MIME
+                file.getAbsolutePath()
+        );
+
+        client.sendMessage(fileMessage); // envoyer via socket
+
+        // Afficher la bulle côté envoyeur
         Platform.runLater(() -> {
-            Label fileLabel = new Label("📎 " + file.getName());
-            fileLabel.setStyle(
-                    "-fx-background-color: #DCF8C6;" +
-                            "-fx-padding: 8 12;" +
-                            "-fx-background-radius: 10;"
-            );
-            HBox hbox = new HBox();
-            hbox.setAlignment(Pos.CENTER_RIGHT);
-            hbox.setPadding(new Insets(2, 10, 2, 50));
-            hbox.getChildren().add(fileLabel);
-            messageContainer.getChildren().add(hbox);
+            HBox bubble = createFileBubble(fileMessage, true);
+            messageContainer.getChildren().add(bubble);
             messageScrollPane.setVvalue(1.0);
         });
     }
 
-    public void displayFile() {
-        System.out.println("📎 Affichage fichier reçu !");
+    public void displayFile(model.FileMessage fm) {
+        Platform.runLater(() -> {
+            HBox bubble = createFileBubble(fm, false);
+            messageContainer.getChildren().add(bubble);
+            messageScrollPane.setVvalue(1.0);
+        });
     }
 
     private void startAudioCall() {

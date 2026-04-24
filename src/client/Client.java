@@ -42,7 +42,11 @@ public class Client implements Runnable {
             while (true) {
                 Object received = in.readObject();
 
-                if (received instanceof Message) {
+                if (received instanceof model.FileMessage) {
+                    model.FileMessage fm = (model.FileMessage) received;
+                    if (chatWindow != null) chatWindow.displayFile(fm);
+
+                } else if (received instanceof Message) {
                     receiveMessage((Message) received);
 
                 } else if (received instanceof List) {
