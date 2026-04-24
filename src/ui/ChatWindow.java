@@ -236,6 +236,9 @@ public class ChatWindow extends Application {
                 imageView.setFitWidth(250);
                 imageView.setPreserveRatio(true);
 
+                imageView.setStyle("-fx-cursor: hand;");
+                imageView.setOnMouseClicked(e -> openFile(fm));
+
                 String time = timeFormat.format(
                         message.getTimestamp() != null
                                 ? message.getTimestamp() : new Date()
