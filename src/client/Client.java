@@ -172,6 +172,12 @@ public class Client implements Runnable {
                 callWindow.setCall(incomingCall);
                 callWindow.showIncoming();
 
+                // Démarrer le streaming audio côté appelant
+                if (currentCall instanceof call.AudioCall) {
+                    ((call.AudioCall) currentCall).captureAudio();
+                    startAudioStreaming((call.AudioCall) currentCall);
+                }
+
             } else if (incomingCall.getStatus() == model.CallStatus.PENDING) {
                 CallWindow window = new CallWindow(this, incomingCall);
                 window.setCallerMode(false);
