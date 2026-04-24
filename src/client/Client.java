@@ -60,18 +60,25 @@ public class Client implements Runnable {
                     if (currentCall instanceof call.AudioCall) {
                         ((call.AudioCall) currentCall).playAudioData((byte[]) received);
                     } else if (currentCall instanceof call.VideoCall) {
-                        // Afficher la frame vidéo reçue
                         byte[] frameData = (byte[]) received;
-                        Platform.runLater(() -> {
-                            if (callWindow != null) {
-                                javafx.scene.image.Image img = new javafx.scene.image.Image(
-                                        new java.io.ByteArrayInputStream(frameData)
-                                );
-                                callWindow.showVideoFeed(img);
-                            }
-                        });
+                        if (frameData.length > 10000) {
+                            // C'est une frame vidéo (grande taille)
+                            Platform.runLater(() -> {
+                                if (callWindow != null) {
+                                    javafx.scene.image.Image img = new javafx.scene.image.Image(
+                                            new java.io.ByteArrayInputStream(frameData)
+                                    );
+                                    callWindow.showVideoFeed(img);
+                                }
+                            });
+                        } else {
+                            // C'est de l'audio (petite taille)
+                            ((call.VideoCall) currentCall).playAudioData(frameData);
+                        }
                     }
-                } else if (received instanceof String) {
+                }
+
+                else if (received instanceof String) {
                     handleServerCommand((String) received);
 
                 } else if (received instanceof User) {
@@ -291,7 +298,8 @@ public class Client implements Runnable {
     }
 
     public void startVideoStreaming(VideoCall videoCall) {
-        Thread streamThread = new Thread(() -> {
+        // Thread vidéo
+        Thread videoThread = new Thread(() -> {
             while (videoCall.getStatus() == model.CallStatus.ACTIVE) {
                 byte[] data = videoCall.captureFrameBytes();
                 if (data.length > 0) {
@@ -300,8 +308,21 @@ public class Client implements Runnable {
                 try { Thread.sleep(33); } catch (InterruptedException e) {}
             }
         });
-        streamThread.setDaemon(true);
-        streamThread.start();
+        videoThread.setDaemon(true);
+        videoThread.start();
+
+        // Thread audio
+        videoCall.captureAudio();
+        Thread audioThread = new Thread(() -> {
+            while (videoCall.getStatus() == model.CallStatus.ACTIVE) {
+                byte[] data = videoCall.readAudioData();
+                if (data.length > 0) {
+                    sendObject(data);
+                }
+            }
+        });
+        audioThread.setDaemon(true);
+        audioThread.start();
     }
 
 

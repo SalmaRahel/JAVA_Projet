@@ -6,6 +6,7 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.OpenCVFrameGrabber;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
+
 import java.awt.image.BufferedImage;
 
 // VideoCall hérite de Call (classe abstraite).
@@ -51,6 +52,9 @@ public class VideoCall extends Call {
     // Convertisseur : transforme une Frame OpenCV en BufferedImage Java
     // Nécessaire car Java ne comprend pas directement le format OpenCV
     private transient Java2DFrameConverter converter;
+    private transient javax.sound.sampled.AudioFormat audioFormat;
+    private transient javax.sound.sampled.TargetDataLine audioLine;
+    private transient javax.sound.sampled.SourceDataLine speakerLine;
 
     // ============================================================
     // CONSTRUCTEUR
@@ -233,6 +237,50 @@ public class VideoCall extends Call {
     // ============================================================
     // MÉTHODE toString()
     // ============================================================
+
+    public void captureAudio() {
+        try {
+            if (audioFormat == null) {
+                audioFormat = new javax.sound.sampled.AudioFormat(44100, 16, 1, true, false);
+            }
+            javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(
+                    javax.sound.sampled.TargetDataLine.class, audioFormat
+            );
+            audioLine = (javax.sound.sampled.TargetDataLine) javax.sound.sampled.AudioSystem.getLine(info);
+            audioLine.open(audioFormat);
+            audioLine.start();
+            System.out.println("🎙️ Audio vidéo démarré !");
+        } catch (Exception e) {
+            System.out.println("❌ Erreur audio : " + e.getMessage());
+        }
+    }
+
+    public byte[] readAudioData() {
+        if (audioLine == null || !audioLine.isOpen()) return new byte[0];
+        byte[] buffer = new byte[4096];
+        int bytesRead = audioLine.read(buffer, 0, buffer.length);
+        return bytesRead > 0 ? buffer : new byte[0];
+    }
+
+    public void playAudioData(byte[] data) {
+        try {
+            if (audioFormat == null) {
+                audioFormat = new javax.sound.sampled.AudioFormat(44100, 16, 1, true, false);
+            }
+            if (speakerLine == null || !speakerLine.isOpen()) {
+                javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(
+                        javax.sound.sampled.SourceDataLine.class, audioFormat
+                );
+                speakerLine = (javax.sound.sampled.SourceDataLine) javax.sound.sampled.AudioSystem.getLine(info);
+                speakerLine.open(audioFormat);
+                speakerLine.start();
+            }
+            speakerLine.write(data, 0, data.length);
+        } catch (Exception e) {
+            System.out.println("❌ Erreur lecture audio : " + e.getMessage());
+        }
+    }
+
     @Override
     public String toString() {
         return "VideoCall{" +
