@@ -241,7 +241,10 @@ public class VideoCall extends Call {
     public void captureAudio() {
         try {
             if (audioFormat == null) {
-                audioFormat = new javax.sound.sampled.AudioFormat(44100, 16, 1, true, false);
+                audioFormat = new javax.sound.sampled.AudioFormat(
+                        javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED,
+                        44100, 16, 1, 2, 44100, false
+                );
             }
             javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(
                     javax.sound.sampled.TargetDataLine.class, audioFormat
@@ -272,7 +275,10 @@ public class VideoCall extends Call {
     public void playAudioData(byte[] data) {
         try {
             if (audioFormat == null) {
-                audioFormat = new javax.sound.sampled.AudioFormat(44100, 16, 1, true, false);
+                audioFormat = new javax.sound.sampled.AudioFormat(
+                        javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED,
+                        44100, 16, 1, 2, 44100, false
+                );
             }
             if (speakerLine == null || !speakerLine.isOpen()) {
                 javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(

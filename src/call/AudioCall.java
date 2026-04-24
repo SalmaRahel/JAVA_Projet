@@ -50,7 +50,10 @@ public class AudioCall extends Call {
 
         // On configure le format audio
         // Paramètres : (fréquence, bits, canaux, signed, bigEndian)
-        this.audioFormat = new AudioFormat(44100, 16, 1, true, false);
+        this.audioFormat = new AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                44100, 16, 1, 2, 44100, false
+        );
 
         this.audioLine = null;  // Sera initialisé dans captureAudio()
         this.isMuted = false;   // Par défaut le micro est actif
@@ -76,7 +79,10 @@ public class AudioCall extends Call {
     public void captureAudio() {
         try {
             if (audioFormat == null) {
-                audioFormat = new AudioFormat(44100, 16, 1, true, false);
+                audioFormat = new AudioFormat(
+                        AudioFormat.Encoding.PCM_SIGNED,
+                        44100, 16, 1, 2, 44100, false
+                );
             }
             // DataLine.Info décrit le type de ligne audio qu'on veut
             // ici on veut une ligne de CAPTURE (microphone)
@@ -154,7 +160,10 @@ public class AudioCall extends Call {
     public void playAudioData(byte[] data) {
         try {
             if (audioFormat == null) {
-                audioFormat = new AudioFormat(44100, 16, 1, true, false);
+                audioFormat = new AudioFormat(
+                        AudioFormat.Encoding.PCM_SIGNED,
+                        44100, 16, 1, 2, 44100, false
+                );
             }
             // Ouvrir la ligne UNE SEULE FOIS
             if (speakerLine == null || !speakerLine.isOpen()) {
