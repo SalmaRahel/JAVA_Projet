@@ -220,13 +220,56 @@ public class ChatWindow extends Application {
                 && message.getSender().getUsername()
                 .equals(client.getUser().getUsername());
 
-        // Contenu de la bulle
+        // Si c'est un fichier → bulle fichier
+        if (message instanceof model.FileMessage) {
+            model.FileMessage fm = (model.FileMessage) message;
+
+            // Si c'est une image → afficher inline
+            if (fm.getFileType() != null && fm.getFileType().startsWith("image/")
+                    && fm.getFileData() != null && fm.getFileData().length > 0) {
+
+                javafx.scene.image.Image img = new javafx.scene.image.Image(
+                        new java.io.ByteArrayInputStream(fm.getFileData())
+                );
+                javafx.scene.image.ImageView imageView =
+                        new javafx.scene.image.ImageView(img);
+                imageView.setFitWidth(250);
+                imageView.setPreserveRatio(true);
+
+                String time = timeFormat.format(
+                        message.getTimestamp() != null
+                                ? message.getTimestamp() : new Date()
+                );
+                Label timeLabel = new Label(time + (isSentByMe ? " ✓" : ""));
+                timeLabel.setFont(Font.font("Arial", 10));
+                timeLabel.setTextFill(Color.GRAY);
+
+                VBox bubbleContent = new VBox(3);
+                bubbleContent.getChildren().addAll(imageView, timeLabel);
+                bubbleContent.setPadding(new Insets(6));
+                bubbleContent.setStyle(
+                        "-fx-background-color: " + (isSentByMe ? "#DCF8C6" : "white") + ";" +
+                                "-fx-background-radius: 10;"
+                );
+
+                HBox hbox = new HBox();
+                hbox.setAlignment(isSentByMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+                hbox.setPadding(isSentByMe
+                        ? new Insets(2, 10, 2, 50)
+                        : new Insets(2, 50, 2, 10));
+                hbox.getChildren().add(bubbleContent);
+                return hbox;
+            }
+
+            // Sinon → bulle fichier normale
+            return createFileBubble(fm, isSentByMe);
+        }
+
+        // Message texte normal
         String time = timeFormat.format(
                 message.getTimestamp() != null
                         ? message.getTimestamp() : new Date()
         );
-
-        // Icône lu/non lu (✓ = envoyé, ✓✓ = lu)
         String readIcon = isSentByMe ? " ✓" : "";
 
         Label messageLabel = new Label(message.getContent());
@@ -244,36 +287,25 @@ public class ChatWindow extends Application {
         bubbleContent.setMaxWidth(360);
 
         if (isSentByMe) {
-            // Message envoyé — bulle verte à DROITE
             bubbleContent.setStyle(
                     "-fx-background-color: #DCF8C6;" +
                             "-fx-background-radius: 15 15 0 15;"
             );
             timeLabel.setAlignment(Pos.CENTER_RIGHT);
-
             HBox hbox = new HBox();
             hbox.setAlignment(Pos.CENTER_RIGHT);
             hbox.setPadding(new Insets(2, 10, 2, 50));
             hbox.getChildren().add(bubbleContent);
             return hbox;
-
         } else {
-            // Message reçu — bulle blanche à GAUCHE
-            // Nom de l'expéditeur au-dessus
-            Label senderLabel = new Label(
-                    message.getSender().getUsername()
-            );
-            senderLabel.setFont(
-                    Font.font("Arial", FontWeight.BOLD, 11)
-            );
+            Label senderLabel = new Label(message.getSender().getUsername());
+            senderLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
             senderLabel.setTextFill(Color.web("#075E54"));
-
             bubbleContent.getChildren().add(0, senderLabel);
             bubbleContent.setStyle(
                     "-fx-background-color: white;" +
                             "-fx-background-radius: 15 15 15 0;"
             );
-
             HBox hbox = new HBox();
             hbox.setAlignment(Pos.CENTER_LEFT);
             hbox.setPadding(new Insets(2, 50, 2, 10));
