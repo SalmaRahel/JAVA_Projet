@@ -257,9 +257,16 @@ public class VideoCall extends Call {
 
     public byte[] readAudioData() {
         if (audioLine == null || !audioLine.isOpen()) return new byte[0];
-        byte[] buffer = new byte[4096];
-        int bytesRead = audioLine.read(buffer, 0, buffer.length);
-        return bytesRead > 0 ? buffer : new byte[0];
+        int frameSize = audioLine.getFormat().getFrameSize();
+        int bufferSize = 4096 - (4096 % frameSize);
+        byte[] buffer = new byte[bufferSize];
+        int bytesRead = audioLine.read(buffer, 0, bufferSize);
+        if (bytesRead > 0) {
+            byte[] result = new byte[bytesRead];
+            System.arraycopy(buffer, 0, result, 0, bytesRead);
+            return result;
+        }
+        return new byte[0];
     }
 
     public void playAudioData(byte[] data) {
