@@ -188,8 +188,11 @@ public class Client implements Runnable {
                     ((call.AudioCall) currentCall).captureAudio();
                     startAudioStreaming((call.AudioCall) currentCall);
                 } else if (currentCall instanceof call.VideoCall) {
-                    ((call.VideoCall) currentCall).captureVideo();
-                    startVideoStreaming((call.VideoCall) currentCall);
+                    call.VideoCall vc = (call.VideoCall) currentCall;
+                    new Thread(() -> {
+                        vc.captureVideo();
+                        startVideoStreaming(vc);
+                    }).start();
                 }
 
             } else if (incomingCall.getStatus() == model.CallStatus.PENDING) {
