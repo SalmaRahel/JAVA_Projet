@@ -282,7 +282,11 @@ public class VideoCall extends Call {
                 speakerLine.open(audioFormat);
                 speakerLine.start();
             }
-            speakerLine.write(data, 0, data.length);
+            int frameSize = speakerLine.getFormat().getFrameSize();
+            int validLength = data.length - (data.length % frameSize);
+            if (validLength > 0) {
+                speakerLine.write(data, 0, validLength);
+            }
         } catch (Exception e) {
             System.out.println("❌ Erreur lecture audio : " + e.getMessage());
         }
