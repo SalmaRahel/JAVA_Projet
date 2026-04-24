@@ -253,7 +253,7 @@ public class Client implements Runnable {
         }
     }
 
-    private void sendObject(Object obj) {
+    private synchronized void sendObject(Object obj) {
         try {
             if (out != null) {
                 out.writeObject(obj);
@@ -305,7 +305,7 @@ public class Client implements Runnable {
                 if (data.length > 0) {
                     sendObject(data);
                 }
-                try { Thread.sleep(33); } catch (InterruptedException e) {}
+                try { Thread.sleep(100); } catch (InterruptedException e) {}
             }
         });
         videoThread.setDaemon(true);
@@ -319,6 +319,7 @@ public class Client implements Runnable {
                 if (data.length > 0) {
                     sendObject(data);
                 }
+                try { Thread.sleep(20); } catch (InterruptedException e) {}
             }
         });
         audioThread.setDaemon(true);
