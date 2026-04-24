@@ -59,43 +59,35 @@ public class ClientHandler implements Runnable {
     // Cette méthode est appelée automatiquement quand le Thread démarre
     // Elle tourne en boucle tant que le client est connecté
     @Override
+
     public void run() {
         try {
-            // Étape 1 : Créer les flux d'entrée et de sortie
-            // IMPORTANT : out doit être créé AVANT in
             out = new ObjectOutputStream(socket.getOutputStream());
-            out.flush(); // Vider le buffer immédiatement
+            out.flush();
             in = new ObjectInputStream(socket.getInputStream());
 
             System.out.println("🔗 Nouveau client en attente de login...");
 
-            // Étape 2 : Attendre le login du client
-            // Le premier objet reçu est toujours un User (login)
             Object firstObject = in.readObject();
 
             if (firstObject instanceof User) {
                 this.user = (User) firstObject;
 
-                // Vérifier le login dans la base de données
                 User dbUser = DatabaseManager.getUserByLogin(
                         user.getUsername(),
                         user.getPassword()
                 );
 
                 if (dbUser != null) {
-                    // Login réussi
                     this.user = dbUser;
                     this.user.setOnline(true);
 
-                    // Mettre à jour le statut dans la BD
                     DatabaseManager.updateUserOnlineStatus(
                             user.getId(), true
                     );
 
-                    // Enregistrer ce client dans le serveur
                     server.addClient(user.getUsername(), this);
 
-                    // Envoyer confirmation au client
                     sendObject("LOGIN_SUCCESS");
                     sendObject(dbUser);
                     sendUserList(server.getConnectedUsers());
@@ -103,7 +95,6 @@ public class ClientHandler implements Runnable {
                             + user.getUsername());
 
                 } else {
-                    // Login échoué
                     sendObject("LOGIN_FAILED");
                     System.out.println("❌ Login échoué !");
                     closeConnection();
@@ -111,29 +102,24 @@ public class ClientHandler implements Runnable {
                 }
             }
 
-            // Étape 3 : Boucle principale — écouter les messages du client
-            // On reste dans cette boucle tant que le client est connecté
             while (true) {
-                // Lire le prochain objet envoyé par le client
                 Object received = in.readObject();
 
-                // Traiter l'objet reçu selon son type
                 if (received instanceof Message) {
-                    // C'est un message texte ou fichier
                     handleMessage((Message) received);
 
                 } else if (received instanceof String) {
-                    // C'est une commande texte
                     handleCommand((String) received);
 
                 } else if (received instanceof call.Call) {
-                    // C'est un appel audio ou vidéo
                     handleCall((call.Call) received);
+
+                } else if (received instanceof byte[]) {
+                    server.broadcastAudio((byte[]) received, this);
                 }
             }
 
         } catch (EOFException e) {
-            // Le client s'est déconnecté normalement
             System.out.println("👤 Client déconnecté : "
                     + (user != null ? user.getUsername() : "inconnu"));
 
@@ -141,7 +127,6 @@ public class ClientHandler implements Runnable {
             System.out.println("❌ Erreur client : " + e.getMessage());
 
         } finally {
-            // Dans tous les cas, on ferme la connexion proprement
             closeConnection();
         }
     }

@@ -313,22 +313,19 @@ public class CallWindow extends Application {
             call.accept();
             System.out.println("✅ Appel accepté !");
 
-            // Notifier l'appelant que l'appel est accepté
             if (client != null) {
                 client.sendCallResponse(call);
             }
 
-            // Si c'est un appel vidéo → démarrer la caméra
             if (call instanceof VideoCall) {
                 ((VideoCall) call).captureVideo();
             }
 
-            // Si c'est un appel audio → démarrer le micro
             if (call instanceof AudioCall) {
                 ((AudioCall) call).captureAudio();
+                client.startAudioStreaming((AudioCall) call);
             }
 
-            // Mettre à jour l'interface
             showIncoming();
         }
     }

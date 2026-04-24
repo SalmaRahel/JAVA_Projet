@@ -55,6 +55,12 @@ public class Client implements Runnable {
                 } else if (received instanceof Call) {
                     currentCall = (Call) received;
                     receiveCall(currentCall);
+                } else if (received instanceof byte[]) {
+                    // Données audio reçues → jouer le son
+                    if (currentCall instanceof call.AudioCall) {
+                        ((call.AudioCall) currentCall).playAudioData((byte[]) received);
+                    }
+                }
 
                 } else if (received instanceof String) {
                     handleServerCommand((String) received);
@@ -140,6 +146,19 @@ public class Client implements Runnable {
         sendObject(currentCall);
         System.out.println("📞 Appel " + type.name()
                 + " vers " + target.getUsername());
+    }
+
+    public void startAudioStreaming(AudioCall audioCall) {
+        Thread streamThread = new Thread(() -> {
+            while (audioCall.getStatus() == model.CallStatus.ACTIVE) {
+                byte[] data = audioCall.readAudioData();
+                if (data.length > 0) {
+                    sendObject(data);
+                }
+            }
+        });
+        streamThread.setDaemon(true);
+        streamThread.start();
     }
 
     public void receiveCall(Call incomingCall) {
@@ -247,6 +266,8 @@ public class Client implements Runnable {
     public void sendCallResponse(call.Call call) {
         sendObject(call);
     }
+
+
 
     public static void main(String[] args) {
         Client client = new Client("localhost", 5000);

@@ -148,6 +148,26 @@ public class AudioCall extends Call {
                     + e.getMessage());
         }
     }
+
+    public void playAudioData(byte[] data) {
+        try {
+            if (audioFormat == null) {
+                audioFormat = new AudioFormat(44100, 16, 1, true, false);
+            }
+            DataLine.Info info = new DataLine.Info(
+                    SourceDataLine.class, audioFormat
+            );
+            SourceDataLine speakerLine =
+                    (SourceDataLine) AudioSystem.getLine(info);
+            speakerLine.open(audioFormat);
+            speakerLine.start();
+            speakerLine.write(data, 0, data.length);
+            speakerLine.drain();
+            speakerLine.close();
+        } catch (LineUnavailableException e) {
+            System.out.println("❌ Erreur lecture audio : " + e.getMessage());
+        }
+    }
     // Couper le microphone (mute)
     public void mute() {
         isMuted = true;
