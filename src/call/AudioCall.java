@@ -38,6 +38,8 @@ public class AudioCall extends Call {
     // true = l'utilisateur a coupé son micro, false = micro actif
     private boolean isMuted;
 
+    private transient SourceDataLine speakerLine = null;
+
     // ============================================================
     // CONSTRUCTEUR
     // ============================================================
@@ -154,16 +156,18 @@ public class AudioCall extends Call {
             if (audioFormat == null) {
                 audioFormat = new AudioFormat(44100, 16, 1, true, false);
             }
-            DataLine.Info info = new DataLine.Info(
-                    SourceDataLine.class, audioFormat
-            );
-            SourceDataLine speakerLine =
-                    (SourceDataLine) AudioSystem.getLine(info);
-            speakerLine.open(audioFormat);
-            speakerLine.start();
+            // Ouvrir la ligne UNE SEULE FOIS
+            if (speakerLine == null || !speakerLine.isOpen()) {
+                DataLine.Info info = new DataLine.Info(
+                        SourceDataLine.class, audioFormat
+                );
+                speakerLine = (SourceDataLine) AudioSystem.getLine(info);
+                speakerLine.open(audioFormat);
+                speakerLine.start();
+            }
+            // Jouer les données directement
             speakerLine.write(data, 0, data.length);
-            speakerLine.drain();
-            speakerLine.close();
+
         } catch (LineUnavailableException e) {
             System.out.println("❌ Erreur lecture audio : " + e.getMessage());
         }
@@ -201,6 +205,10 @@ public class AudioCall extends Call {
             audioLine.stop();
             audioLine.close();
             System.out.println("🎙️ Microphone fermé !");
+        }
+        if (speakerLine != null && speakerLine.isOpen()) {
+            speakerLine.stop();
+            speakerLine.close();
         }
     }
 
