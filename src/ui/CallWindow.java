@@ -319,6 +319,7 @@ public class CallWindow extends Application {
 
             if (call instanceof VideoCall) {
                 ((VideoCall) call).captureVideo();
+                client.startVideoStreaming((VideoCall) call);
             }
 
             if (call instanceof AudioCall) {

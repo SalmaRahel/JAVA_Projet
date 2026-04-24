@@ -59,8 +59,18 @@ public class Client implements Runnable {
                 } else if (received instanceof byte[]) {
                     if (currentCall instanceof call.AudioCall) {
                         ((call.AudioCall) currentCall).playAudioData((byte[]) received);
+                    } else if (currentCall instanceof call.VideoCall) {
+                        // Afficher la frame vidéo reçue
+                        byte[] frameData = (byte[]) received;
+                        Platform.runLater(() -> {
+                            if (callWindow != null) {
+                                javafx.scene.image.Image img = new javafx.scene.image.Image(
+                                        new java.io.ByteArrayInputStream(frameData)
+                                );
+                                callWindow.showVideoFeed(img);
+                            }
+                        });
                     }
-
                 } else if (received instanceof String) {
                     handleServerCommand((String) received);
 
@@ -173,9 +183,13 @@ public class Client implements Runnable {
                 callWindow.showIncoming();
 
                 // Démarrer le streaming audio côté appelant
+                // Démarrer le streaming côté appelant
                 if (currentCall instanceof call.AudioCall) {
                     ((call.AudioCall) currentCall).captureAudio();
                     startAudioStreaming((call.AudioCall) currentCall);
+                } else if (currentCall instanceof call.VideoCall) {
+                    ((call.VideoCall) currentCall).captureVideo();
+                    startVideoStreaming((call.VideoCall) currentCall);
                 }
 
             } else if (incomingCall.getStatus() == model.CallStatus.PENDING) {
@@ -273,6 +287,19 @@ public class Client implements Runnable {
         sendObject(call);
     }
 
+    public void startVideoStreaming(VideoCall videoCall) {
+        Thread streamThread = new Thread(() -> {
+            while (videoCall.getStatus() == model.CallStatus.ACTIVE) {
+                byte[] data = videoCall.captureFrameBytes();
+                if (data.length > 0) {
+                    sendObject(data);
+                }
+                try { Thread.sleep(33); } catch (InterruptedException e) {}
+            }
+        });
+        streamThread.setDaemon(true);
+        streamThread.start();
+    }
 
 
     public static void main(String[] args) {

@@ -207,6 +207,29 @@ public class VideoCall extends Call {
         return frameRate;
     }
 
+    // Capturer une frame et la retourner en bytes
+    public byte[] captureFrameBytes() {
+        try {
+            if (converter == null) {
+                converter = new Java2DFrameConverter();
+            }
+            if (videoCapture == null || !camOn) {
+                return new byte[0];
+            }
+            Frame frame = videoCapture.grab();
+            if (frame == null) return new byte[0];
+
+            BufferedImage img = converter.convert(frame);
+            if (img == null) return new byte[0];
+
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(img, "jpg", baos);
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            return new byte[0];
+        }
+    }
     // ============================================================
     // MÉTHODE toString()
     // ============================================================
