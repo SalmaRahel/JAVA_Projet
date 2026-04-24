@@ -434,22 +434,53 @@ public class ChatWindow extends Application {
     }
 
     private HBox createFileBubble(model.FileMessage fm, boolean isSent) {
-        Button fileBtn = new Button("📎 " + fm.getFileName()
-                + " (" + fm.getFileSizeFormatted() + ")");
-        fileBtn.setStyle(
+        VBox bubbleContent = new VBox(5);
+        bubbleContent.setPadding(new Insets(8));
+        bubbleContent.setMaxWidth(300);
+        bubbleContent.setStyle(
                 "-fx-background-color: " + (isSent ? "#DCF8C6" : "white") + ";" +
-                        "-fx-padding: 8 12;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-cursor: hand;"
+                        "-fx-background-radius: 10;"
         );
-        fileBtn.setOnAction(e -> openFile(fm));
+
+        // Aperçu PDF
+        if (fm.getFileType() != null && fm.getFileType().equals("application/pdf")
+                && fm.getFileData() != null && fm.getFileData().length > 0) {
+            try {
+                org.apache.pdfbox.pdmodel.PDDocument doc =
+                        org.apache.pdfbox.Loader.loadPDF(fm.getFileData());
+                org.apache.pdfbox.rendering.PDFRenderer renderer =
+                        new org.apache.pdfbox.rendering.PDFRenderer(doc);
+                java.awt.image.BufferedImage bim = renderer.renderImageWithDPI(0, 72);
+                doc.close();
+
+                javafx.embed.swing.SwingFXUtils swingFXUtils = null;
+                javafx.scene.image.Image preview =
+                        javafx.embed.swing.SwingFXUtils.toFXImage(bim, null);
+                javafx.scene.image.ImageView previewView =
+                        new javafx.scene.image.ImageView(preview);
+                previewView.setFitWidth(250);
+                previewView.setPreserveRatio(true);
+                bubbleContent.getChildren().add(previewView);
+
+            } catch (Exception e) {
+                System.out.println("❌ Erreur aperçu PDF : " + e.getMessage());
+            }
+        }
+
+        // Nom + taille du fichier
+        Label fileLabel = new Label("📎 " + fm.getFileName()
+                + " (" + fm.getFileSizeFormatted() + ")");
+        fileLabel.setWrapText(true);
+        fileLabel.setStyle("-fx-cursor: hand;");
+        fileLabel.setOnMouseClicked(e -> openFile(fm));
+        bubbleContent.getChildren().add(fileLabel);
 
         HBox hbox = new HBox();
         hbox.setAlignment(isSent ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         hbox.setPadding(isSent
                 ? new Insets(2, 10, 2, 50)
                 : new Insets(2, 50, 2, 10));
-        hbox.getChildren().add(fileBtn);
+        hbox.getChildren().add(bubbleContent);
         return hbox;
     }
 

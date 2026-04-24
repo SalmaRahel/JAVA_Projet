@@ -154,7 +154,11 @@ public class Client implements Runnable {
         System.out.println("📨 Message reçu de "
                 + message.getSender().getUsername());
         if (chatWindow != null) {
-            chatWindow.displayMessage(message);
+            if (message instanceof model.FileMessage) {
+                chatWindow.displayMessage(message);
+            } else {
+                chatWindow.displayMessage(message);
+            }
         }
     }
 
