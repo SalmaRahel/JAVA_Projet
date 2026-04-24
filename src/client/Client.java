@@ -44,8 +44,7 @@ public class Client implements Runnable {
 
                 if (received instanceof model.FileMessage) {
                     model.FileMessage fm = (model.FileMessage) received;
-                    if (chatWindow != null) chatWindow.displayFile(fm);
-
+                    if (chatWindow != null) chatWindow.displayMessage(fm);
                 } else if (received instanceof Message) {
                     receiveMessage((Message) received);
 

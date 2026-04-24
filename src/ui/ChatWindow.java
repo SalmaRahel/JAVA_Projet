@@ -485,6 +485,12 @@ public class ChatWindow extends Application {
     }
 
     private String getFileType(File file) {
+        String name = file.getName().toLowerCase();
+        if (name.endsWith(".png")) return "image/png";
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+        if (name.endsWith(".gif")) return "image/gif";
+        if (name.endsWith(".pdf")) return "application/pdf";
+        if (name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         try {
             String type = java.nio.file.Files.probeContentType(file.toPath());
             return type != null ? type : "application/octet-stream";
@@ -511,8 +517,9 @@ public class ChatWindow extends Application {
         client.sendMessage(fileMessage); // envoyer via socket
 
         // Afficher la bulle côté envoyeur
+        // Afficher la bulle côté envoyeur
         Platform.runLater(() -> {
-            HBox bubble = createFileBubble(fileMessage, true);
+            HBox bubble = createMessageBubble(fileMessage);
             messageContainer.getChildren().add(bubble);
             messageScrollPane.setVvalue(1.0);
         });
