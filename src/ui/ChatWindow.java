@@ -33,14 +33,18 @@ public class ChatWindow extends Application {
     private TextField inputField;
     private Button sendButton;
     private Button attachButton;
-    private ListView<String> userListPanel;
+    private ListView<User> userListPanel;
     private Label contactLabel;
     private Label windowTitleLabel;
     private Stage stage;
     private ScrollPane messageScrollPane;
     private VBox messageContainer; // Contient les bulles de messages
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-
+    // Pour l'enregistrement vocal
+    private javax.sound.sampled.TargetDataLine micLine;
+    private java.io.ByteArrayOutputStream voiceBuffer;
+    private Thread recordingThread;
+    private long recordingStartTime;
     // ============================================================
     // CONSTRUCTEURS
     // ============================================================
@@ -79,11 +83,77 @@ public class ChatWindow extends Application {
         userListPanel.setPrefWidth(220);
         userListPanel.setStyle("-fx-background-color: #f0f0f0;");
 
+        userListPanel.setCellFactory(lv -> new javafx.scene.control.ListCell<User>() {
+            @Override
+            protected void updateItem(User user, boolean empty) {
+                super.updateItem(user, empty);
+                if (empty || user == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    javafx.scene.image.ImageView photo = new javafx.scene.image.ImageView();
+                    photo.setFitWidth(38);
+                    photo.setFitHeight(38);
+                    photo.setPreserveRatio(false);
+
+                    if (user.getProfilePhoto() != null && !user.getProfilePhoto().isEmpty()) {
+                        try {
+                            byte[] bytes = java.util.Base64.getDecoder().decode(user.getProfilePhoto());
+                            photo.setImage(new javafx.scene.image.Image(
+                                    new java.io.ByteArrayInputStream(bytes)
+                            ));
+                        } catch (Exception e) {
+                            setDefaultPhoto(photo);
+                        }
+                    } else {
+                        setDefaultPhoto(photo);
+                    }
+
+                    javafx.scene.shape.Circle clip = new javafx.scene.shape.Circle(19, 19, 19);
+                    photo.setClip(clip);
+
+                    Label nameLabel = new Label(user.getUsername());
+                    nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+
+                    HBox cell = new HBox(10);
+                    cell.setAlignment(Pos.CENTER_LEFT);
+                    cell.setPadding(new Insets(5));
+                    cell.getChildren().addAll(photo, nameLabel);
+                    setGraphic(cell);
+                    setText(null);
+                }
+            }
+
+            private void setDefaultPhoto(javafx.scene.image.ImageView iv) {
+                javafx.scene.canvas.Canvas canvas = new javafx.scene.canvas.Canvas(38, 38);
+                javafx.scene.canvas.GraphicsContext gc = canvas.getGraphicsContext2D();
+                gc.setFill(javafx.scene.paint.Color.web("#cccccc"));
+                gc.fillOval(0, 0, 38, 38);
+                iv.setImage(canvas.snapshot(null, null));
+            }
+        });
+
         userListPanel.setOnMouseClicked(event -> {
-            String selectedUsername =
-                    userListPanel.getSelectionModel().getSelectedItem();
-            if (selectedUsername != null) {
-                onContactSelected(selectedUsername);
+            User selectedUser = userListPanel.getSelectionModel().getSelectedItem();
+            if (selectedUser != null) {
+                onContactSelected(selectedUser.getUsername());
+            }
+        });
+
+        Button profileButton = new Button("⚙️ Mon Profil");
+        profileButton.setStyle(
+                "-fx-background-color: #054D44;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-border-width: 0;"
+        );
+        profileButton.setMaxWidth(Double.MAX_VALUE);
+        profileButton.setOnAction(e -> {
+            try {
+                new ProfileWindow(client).start(new Stage());
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         });
 
@@ -91,7 +161,7 @@ public class ChatWindow extends Application {
         leftPanel.setPrefWidth(220);
         leftPanel.setStyle("-fx-background-color: #075E54;");
         VBox.setVgrow(userListPanel, Priority.ALWAYS);
-        leftPanel.getChildren().addAll(windowTitleLabel, userListPanel);
+        leftPanel.getChildren().addAll(windowTitleLabel, userListPanel, profileButton);
 
         // ══════════════════════════════════════════
         // PANNEAU CENTRE — Zone des messages
@@ -187,7 +257,21 @@ public class ChatWindow extends Application {
         inputBar.setAlignment(Pos.CENTER);
         inputBar.setStyle("-fx-background-color: #f0f0f0;");
         HBox.setHgrow(inputField, Priority.ALWAYS);
-        inputBar.getChildren().addAll(attachButton, inputField, sendButton);
+        // Bouton vocal
+        Button voiceButton = new Button("🎤");
+        voiceButton.setPrefSize(45, 45);
+        voiceButton.setStyle(
+                "-fx-background-color: #075E54;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 16px;" +
+                        "-fx-border-radius: 8;" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-cursor: hand;"
+        );
+        voiceButton.setOnMousePressed(e -> startVoiceRecording());
+        voiceButton.setOnMouseReleased(e -> stopAndSendVoice());
+
+        inputBar.getChildren().addAll(attachButton, voiceButton, inputField, sendButton);
 
         VBox centerPanel = new VBox();
         centerPanel.getChildren().addAll(topBar, messageScrollPane, inputBar);
@@ -219,7 +303,9 @@ public class ChatWindow extends Application {
                 && client.getUser() != null
                 && message.getSender().getUsername()
                 .equals(client.getUser().getUsername());
-
+        if (message instanceof model.VoiceMessage) {
+            return createVoiceBubble((model.VoiceMessage) message, isSentByMe);
+        }
         // Si c'est un fichier → bulle fichier
         if (message instanceof model.FileMessage) {
             model.FileMessage fm = (model.FileMessage) message;
@@ -393,9 +479,8 @@ public class ChatWindow extends Application {
             userListPanel.getItems().clear();
             for (User user : users) {
                 if (client.getUser() != null &&
-                        !user.getUsername().equals(
-                                client.getUser().getUsername())) {
-                    userListPanel.getItems().add(user.getUsername());
+                        !user.getUsername().equals(client.getUser().getUsername())) {
+                    userListPanel.getItems().add(user);
                 }
             }
         });
@@ -580,6 +665,122 @@ public class ChatWindow extends Application {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    private void startVoiceRecording() {
+        try {
+            javax.sound.sampled.AudioFormat format = new javax.sound.sampled.AudioFormat(16000, 16, 1, true, false);
+            javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(
+                    javax.sound.sampled.TargetDataLine.class, format
+            );
+            micLine = (javax.sound.sampled.TargetDataLine) javax.sound.sampled.AudioSystem.getLine(info);
+            micLine.open(format);
+            micLine.start();
+
+            voiceBuffer = new java.io.ByteArrayOutputStream();
+            recordingStartTime = System.currentTimeMillis();
+
+            recordingThread = new Thread(() -> {
+                byte[] buffer = new byte[1024];
+                while (micLine != null && micLine.isOpen()) {
+                    int read = micLine.read(buffer, 0, buffer.length);
+                    if (read > 0) voiceBuffer.write(buffer, 0, read);
+                }
+            });
+            recordingThread.setDaemon(true);
+            recordingThread.start();
+
+            System.out.println("🎤 Enregistrement démarré...");
+
+        } catch (Exception e) {
+            showAlert("Impossible d'accéder au micro !");
+        }
+    }
+
+    private void stopAndSendVoice() {
+        if (micLine == null) return;
+
+        micLine.stop();
+        micLine.close();
+        micLine = null;
+
+        byte[] audioData = voiceBuffer.toByteArray();
+        int duration = (int) ((System.currentTimeMillis() - recordingStartTime) / 1000);
+
+        if (audioData.length == 0 || duration == 0) return;
+        if (currentContact == null) { showAlert("Sélectionnez un contact !"); return; }
+
+        model.VoiceMessage vm = new model.VoiceMessage(
+                client.getUser(), currentContact, audioData, duration
+        );
+
+        client.sendMessage(vm);
+
+        Platform.runLater(() -> {
+            HBox bubble = createVoiceBubble(vm, true);
+            messageContainer.getChildren().add(bubble);
+            messageScrollPane.setVvalue(1.0);
+        });
+
+        System.out.println("🎤 Message vocal envoyé (" + duration + "s)");
+    }
+
+    private HBox createVoiceBubble(model.VoiceMessage vm, boolean isSent) {
+        Button playButton = new Button("▶ " + vm.getDurationSeconds() + "s");
+        playButton.setStyle(
+                "-fx-background-color: " + (isSent ? "#25D366" : "#075E54") + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-padding: 8 15;"
+        );
+
+        playButton.setOnAction(e -> {
+            playButton.setDisable(true);
+            new Thread(() -> {
+                try {
+                    javax.sound.sampled.AudioFormat format = new javax.sound.sampled.AudioFormat(16000, 16, 1, true, false);
+                    javax.sound.sampled.AudioInputStream ais = new javax.sound.sampled.AudioInputStream(
+                            new java.io.ByteArrayInputStream(vm.getAudioData()),
+                            format,
+                            vm.getAudioData().length / format.getFrameSize()
+                    );
+                    javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
+                    clip.open(ais);
+                    clip.start();
+                    clip.addLineListener(event -> {
+                        if (event.getType() == javax.sound.sampled.LineEvent.Type.STOP) {
+                            Platform.runLater(() -> playButton.setDisable(false));
+                            clip.close();
+                        }
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        showAlert("Erreur lecture audio !");
+                        playButton.setDisable(false);
+                    });
+                }
+            }).start();
+        });
+
+        String time = timeFormat.format(vm.getTimestamp() != null ? vm.getTimestamp() : new java.util.Date());
+        Label timeLabel = new Label(time + (isSent ? " ✓" : ""));
+        timeLabel.setFont(Font.font("Arial", 10));
+        timeLabel.setTextFill(Color.GRAY);
+
+        VBox bubbleContent = new VBox(4);
+        bubbleContent.setPadding(new Insets(8));
+        bubbleContent.setStyle(
+                "-fx-background-color: " + (isSent ? "#DCF8C6" : "white") + ";" +
+                        "-fx-background-radius: 10;"
+        );
+        bubbleContent.getChildren().addAll(playButton, timeLabel);
+
+        HBox hbox = new HBox();
+        hbox.setAlignment(isSent ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        hbox.setPadding(isSent ? new Insets(2, 10, 2, 50) : new Insets(2, 50, 2, 10));
+        hbox.getChildren().add(bubbleContent);
+        return hbox;
     }
 
     public void displayGroupMessages() {

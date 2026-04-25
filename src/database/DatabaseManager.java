@@ -231,6 +231,7 @@ public class DatabaseManager {
         } catch (SQLException e) {
             System.out.println("❌ Erreur sauvegarde message : "
                     + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -272,16 +273,39 @@ public class DatabaseManager {
                         ""
                 );
 
-                Message message = new Message(
-                        rs.getString("id"),
-                        rs.getString("content"),
-                        sender,
-                        receiver,
-                        new Date(rs.getTimestamp("timestamp")
-                                .getTime()),
-                        MessageType.valueOf(rs.getString("type"))
-                );
-                messages.add(message);
+                MessageType type = MessageType.valueOf(rs.getString("type"));
+
+                if (type == MessageType.FILE) {
+                    model.FileMessage fm = DatabaseManager.getFileData(
+                            rs.getString("id"), sender, receiver,
+                            new Date(rs.getTimestamp("timestamp").getTime())
+                    );
+                    if (fm != null) messages.add(fm);
+                } else if (type == MessageType.VOICE) {
+                    String base64 = rs.getString("content");
+                    byte[] audioData = new byte[0];
+                    try {
+                        audioData = java.util.Base64.getDecoder().decode(base64);
+                    } catch (Exception ignored) {}
+
+                    int duration = Math.max(1, audioData.length / 32000);
+
+                    model.VoiceMessage vm = new model.VoiceMessage(
+                            rs.getString("id"), sender, receiver,
+                            new Date(rs.getTimestamp("timestamp").getTime()),
+                            audioData, duration
+                    );
+                    messages.add(vm);
+                } else {
+                    Message message = new Message(
+                            rs.getString("id"),
+                            rs.getString("content"),
+                            sender, receiver,
+                            new Date(rs.getTimestamp("timestamp").getTime()),
+                            type
+                    );
+                    messages.add(message);
+                }
             }
 
         } catch (SQLException e) {
@@ -375,5 +399,84 @@ public class DatabaseManager {
                     + e.getMessage());
             return false;
         }
+    }
+
+    // Mettre à jour le profil d'un utilisateur (username + password)
+    public static boolean updateUser(String userId, String newUsername, String newPassword) {
+        String sql = "UPDATE users SET username = ?, password = ? WHERE id = ?";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, newUsername);
+            stmt.setString(2, newPassword);
+            stmt.setString(3, userId);
+            stmt.executeUpdate();
+            System.out.println("✅ Profil mis à jour : " + newUsername);
+            return true;
+        } catch (SQLException e) {
+            System.out.println("❌ Erreur mise à jour profil : " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Mettre à jour la photo de profil (on stocke les bytes en base64)
+    public static boolean updateProfilePhoto(String userId, String photoBase64) {
+        String sql = "UPDATE users SET profile_photo = ? WHERE id = ?";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, photoBase64);
+            stmt.setString(2, userId);
+            stmt.executeUpdate();
+            System.out.println("✅ Photo de profil mise à jour !");
+            return true;
+        } catch (SQLException e) {
+            System.out.println("❌ Erreur photo profil : " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Sauvegarder les bytes d'un fichier
+    public static boolean saveFileData(String messageId, byte[] fileData,
+                                       String fileName, String fileType, long fileSize) {
+        String sql = "INSERT INTO files (message_id, file_data, file_name, file_type, file_size) " +
+                "VALUES (?, ?, ?, ?, ?)";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, messageId);
+            stmt.setBytes(2, fileData);
+            stmt.setString(3, fileName);
+            stmt.setString(4, fileType);
+            stmt.setLong(5, fileSize);
+            stmt.executeUpdate();
+            System.out.println("✅ Fichier sauvegardé en BD !");
+            return true;
+        } catch (SQLException e) {
+            System.out.println("❌ Erreur sauvegarde fichier : " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Récupérer les bytes d'un fichier
+    public static model.FileMessage getFileData(String messageId, model.User sender,
+                                                model.User receiver, java.util.Date timestamp) {
+        String sql = "SELECT * FROM files WHERE message_id = ?";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, messageId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return new model.FileMessage(
+                        messageId, sender, receiver, timestamp,
+                        rs.getString("file_name"),
+                        rs.getLong("file_size"),
+                        rs.getString("file_type"),
+                        ""  // filePath vide
+                ) {{
+                    setFileData(rs.getBytes("file_data"));
+                }};
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Erreur récupération fichier : " + e.getMessage());
+        }
+        return null;
     }
 }

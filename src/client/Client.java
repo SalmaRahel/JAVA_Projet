@@ -333,6 +333,9 @@ public class Client implements Runnable {
         audioThread.start();
     }
 
+    public void sendCommand(String command) {
+        sendObject(command);
+    }
 
     public static void main(String[] args) {
         Client client = new Client("localhost", 5000);

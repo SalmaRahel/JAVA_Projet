@@ -23,5 +23,7 @@ public enum MessageType {
     AUDIO_CALL,
 
     // Message indiquant un appel vidéo
-    VIDEO_CALL
+    VIDEO_CALL,
+
+    VOICE
 }

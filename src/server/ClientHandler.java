@@ -143,6 +143,15 @@ public class ClientHandler implements Runnable {
                 + " : " + message.getContent());
 
         // Transmettre le message au destinataire via le serveur
+        // Convertir les bytes vocaux en Base64 avant sauvegarde
+        if (message instanceof model.VoiceMessage) {
+            model.VoiceMessage vm = (model.VoiceMessage) message;
+            if (vm.getAudioData() != null) {
+                String base64 = java.util.Base64.getEncoder().encodeToString(vm.getAudioData());
+                vm.setContent(base64);
+                System.out.println("🎤 VoiceMessage content length: " + base64.length());
+            }
+        }
         server.broadcast(message, this);
     }
 
@@ -157,6 +166,23 @@ public class ClientHandler implements Runnable {
         } else if (command.equals("DISCONNECT")) {
             // Le client veut se déconnecter
             closeConnection();
+        } else if (command.startsWith("UPDATE_PROFILE:")) {
+            // Format : "UPDATE_PROFILE:userId:newUsername:photoBase64"
+            String[] parts = command.split(":", 4);
+            if (parts.length >= 3) {
+                String userId = parts[1];
+                String newUsername = parts[2];
+                String photoBase64 = parts.length == 4 ? parts[3] : "";
+
+                // Mettre à jour l'objet user local
+                user.setUsername(newUsername);
+                if (!photoBase64.isEmpty()) {
+                    user.setProfilePhoto(photoBase64);
+                }
+
+                // Diffuser la nouvelle liste à tous les clients
+                server.notifyUserList();
+            }
         }
     }
 

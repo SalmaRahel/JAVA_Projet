@@ -121,6 +121,10 @@ public class FileMessage extends Message {
 
     public byte[] getFileData() { return fileData; }
 
+    public void setFileData(byte[] fileData) {
+        this.fileData = fileData;
+    }
+
     // ============================================================
     // MÉTHODE UTILITAIRE
     // ============================================================

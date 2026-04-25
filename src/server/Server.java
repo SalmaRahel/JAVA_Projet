@@ -168,8 +168,25 @@ public class Server {
                 + message.getSender().getId()
                 + " → " + message.getReceiver().getId());
 
+
+
         // Sauvegarder dans la base de données
-        DatabaseManager.saveMessage(message);
+        // Ne pas sauvegarder les FileMessage (trop lourds) ni les commandes
+        if (!(message instanceof model.FileMessage) &&
+                message.getType() != model.MessageType.FILE) {
+            DatabaseManager.saveMessage(message);
+        } else if (message instanceof model.FileMessage) {
+            model.FileMessage fm = (model.FileMessage) message;
+            // Sauvegarder les infos du fichier dans messages
+            DatabaseManager.saveMessage(message);
+            // Sauvegarder les bytes dans files
+            if (fm.getFileData() != null && fm.getFileData().length > 0) {
+                DatabaseManager.saveFileData(
+                        fm.getId(), fm.getFileData(),
+                        fm.getFileName(), fm.getFileType(), fm.getFileSize()
+                );
+            }
+        }
     }
 
     // Transmettre un appel à un utilisateur cible
