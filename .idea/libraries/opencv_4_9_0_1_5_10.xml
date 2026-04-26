@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="opencv-4.9.0-1.5.10">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Downloads/opencv-4.9.0-1.5.10.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/javacpp-1.5.13.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/javacv-1.5.13.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/javacpp-1.5.10-windows-x86_64.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/opencv-4.9.0-1.5.10-windows-x86_64.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
