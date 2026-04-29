@@ -71,13 +71,13 @@ public class Server {
         try {
             // Étape 1 : Connexion à MySQL
             DatabaseManager.connect();
-            System.out.println("✅ Base de données connectée !");
+            System.out.println("Base de données connectée !");
 
             // Étape 2 : Création du ServerSocket
             serverSocket = new ServerSocket(port);
             isRunning = true;
-            System.out.println("✅ Serveur démarré sur le port " + port);
-            System.out.println("⏳ En attente de connexions...");
+            System.out.println("Serveur démarré sur le port " + port);
+            System.out.println("En attente de connexions...");
 
             // Étape 3 : Boucle infinie d'attente des clients
             // accept() est bloquante : elle attend qu'un client
@@ -96,7 +96,7 @@ public class Server {
 
         } catch (IOException e) {
             if (isRunning) {
-                System.out.println("❌ Erreur serveur : " + e.getMessage());
+                System.out.println(" Erreur serveur : " + e.getMessage());
             }
         }
     }
@@ -111,10 +111,10 @@ public class Server {
             }
 
             DatabaseManager.disconnect();
-            System.out.println("🔴 Serveur arrêté !");
+            System.out.println("Serveur arrêté !");
 
         } catch (IOException e) {
-            System.out.println("❌ Erreur arrêt serveur : " + e.getMessage());
+            System.out.println("Erreur arrêt serveur : " + e.getMessage());
         }
     }
 
@@ -126,15 +126,15 @@ public class Server {
     public synchronized void addClient(String username,
                                        ClientHandler handler) {
         clientMap.put(username, handler);
-        System.out.println("👤 Utilisateur connecté : " + username);
-        System.out.println("👥 Total connectés : " + clientMap.size());
+        System.out.println("Utilisateur connecté : " + username);
+        System.out.println("Total connectés : " + clientMap.size());
         notifyUserList();
     }
 
     // Supprimer un client déconnecté
     public synchronized void removeClient(User user) {
         clientMap.remove(user.getUsername());
-        System.out.println("👤 Déconnecté : " + user.getUsername());
+        System.out.println(" Déconnecté : " + user.getUsername());
         DatabaseManager.updateUserOnlineStatus(user.getId(), false);
         notifyUserList();
     }
@@ -156,15 +156,15 @@ public class Server {
 
         if (receiverHandler != null) {
             receiverHandler.sendMessage(message);
-            System.out.println("📨 Message : "
+            System.out.println(" Message : "
                     + message.getSender().getUsername()
                     + " → " + receiverUsername);
         } else {
-            System.out.println("⚠️ Destinataire non connecté : "
+            System.out.println("Destinataire non connecté : "
                     + receiverUsername);
         }
 
-        System.out.println("💾 Sauvegarde message : "
+        System.out.println("Sauvegarde message : "
                 + message.getSender().getId()
                 + " → " + message.getReceiver().getId());
 
@@ -195,10 +195,10 @@ public class Server {
 
         if (targetHandler != null) {
             targetHandler.sendObject(call);
-            System.out.println("📞 Appel transmis à : " + targetUsername
+            System.out.println("Appel transmis à : " + targetUsername
                     + " | Statut : " + call.getStatus());
         } else {
-            System.out.println("⚠️ Utilisateur cible non connecté : "
+            System.out.println(" Utilisateur cible non connecté : "
                     + targetUsername);
         }
     }

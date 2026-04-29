@@ -109,10 +109,10 @@ public class VideoCall extends Call {
             videoCapture.start();
 
             camOn = true;
-            System.out.println("📷 Webcam démarrée !");
+            System.out.println("Webcam démarrée !");
 
         } catch (Exception e) {
-            System.out.println("❌ Erreur ouverture webcam : "
+            System.out.println("Erreur ouverture webcam : "
                     + e.getMessage());
         }
     }
@@ -135,7 +135,7 @@ public class VideoCall extends Call {
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Erreur capture frame : "
+            System.out.println("Erreur capture frame : "
                     + e.getMessage());
         }
         return null;
@@ -146,7 +146,7 @@ public class VideoCall extends Call {
     public void displayVideo() {
         // L'affichage réel se fait dans CallWindow (interface graphique)
         // Cette méthode sera appelée par CallWindow
-        System.out.println("🖥️ Affichage vidéo en cours...");
+        System.out.println("Affichage vidéo en cours...");
     }
 
     // Activer/désactiver la caméra
@@ -156,9 +156,9 @@ public class VideoCall extends Call {
             try {
                 videoCapture.stop();
                 camOn = false;
-                System.out.println("📷 Caméra éteinte !");
+                System.out.println("Caméra éteinte !");
             } catch (Exception e) {
-                System.out.println("❌ Erreur arrêt caméra : "
+                System.out.println("Erreur arrêt caméra : "
                         + e.getMessage());
             }
         } else {
@@ -183,10 +183,10 @@ public class VideoCall extends Call {
                 videoCapture.stop();
                 videoCapture.release();
                 camOn = false;
-                System.out.println("📷 Webcam fermée !");
+                System.out.println("Webcam fermée !");
             }
         } catch (Exception e) {
-            System.out.println("❌ Erreur fermeture webcam : "
+            System.out.println("Erreur fermeture webcam : "
                     + e.getMessage());
         }
     }
@@ -252,9 +252,9 @@ public class VideoCall extends Call {
             audioLine = (javax.sound.sampled.TargetDataLine) javax.sound.sampled.AudioSystem.getLine(info);
             audioLine.open(audioFormat);
             audioLine.start();
-            System.out.println("🎙️ Audio vidéo démarré !");
+            System.out.println("Audio vidéo démarré !");
         } catch (Exception e) {
-            System.out.println("❌ Erreur audio : " + e.getMessage());
+            System.out.println("Erreur audio : " + e.getMessage());
         }
     }
 
@@ -294,7 +294,7 @@ public class VideoCall extends Call {
                 speakerLine.write(data, 0, validLength);
             }
         } catch (Exception e) {
-            System.out.println("❌ Erreur lecture audio : " + e.getMessage());
+            System.out.println(" Erreur lecture audio : " + e.getMessage());
         }
     }
 

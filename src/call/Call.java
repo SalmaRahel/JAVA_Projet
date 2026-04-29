@@ -9,22 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 
 // Call est une classe ABSTRAITE.
-// "Abstraite" signifie qu'on ne peut pas créer un objet Call directement.
-// On ne peut pas écrire : Call c = new Call(...) ❌
-//
-// Pourquoi ? Parce qu'un appel dans notre application est TOUJOURS
-// soit un appel AUDIO, soit un appel VIDEO. Jamais un appel "générique".
-//
-// Call sert de BASE COMMUNE pour AudioCall et VideoCall.
-// Elle contient tout ce qui est COMMUN aux deux types d'appels.
-//
-// Analogie simple :
-//   "Véhicule" est abstrait → on ne conduit pas un "véhicule générique"
-//   On conduit une "Voiture" ou une "Moto" (qui héritent de Véhicule)
-//
-//   De même :
-//   "Call" est abstrait → on ne fait pas un "appel générique"
-//   On fait un "AudioCall" ou un "VideoCall" (qui héritent de Call)
+
 
 public abstract class Call implements Serializable {
 
@@ -77,7 +62,7 @@ public abstract class Call implements Serializable {
     public void start() {
         this.status = CallStatus.ACTIVE;
         this.startTime = new Date(); // On enregistre l'heure de début
-        System.out.println("📞 Appel démarré entre "
+        System.out.println("Appel démarré entre "
                 + caller.getUsername() + " et " + called.getUsername());
     }
 
@@ -86,7 +71,7 @@ public abstract class Call implements Serializable {
     public void accept() {
         this.status = CallStatus.ACTIVE;
         this.startTime = new Date();
-        System.out.println("✅ Appel accepté par " + called.getUsername());
+        System.out.println("Appel accepté par " + called.getUsername());
     }
 
     // Refuser l'appel (appelé par le destinataire)
@@ -94,7 +79,7 @@ public abstract class Call implements Serializable {
     public void refuse() {
         this.status = CallStatus.REFUSED;
         this.endTime = new Date(); // On enregistre l'heure du refus
-        System.out.println("❌ Appel refusé par " + called.getUsername());
+        System.out.println("Appel refusé par " + called.getUsername());
     }
 
     // Terminer l'appel (appelé par n'importe quel participant)
@@ -102,7 +87,7 @@ public abstract class Call implements Serializable {
     public void end() {
         this.status = CallStatus.ENDED;
         this.endTime = new Date(); // On enregistre l'heure de fin
-        System.out.println("🔴 Appel terminé entre "
+        System.out.println(" Appel terminé entre "
                 + caller.getUsername() + " et " + called.getUsername());
     }
 

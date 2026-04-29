@@ -86,27 +86,27 @@ public class Client implements Runnable {
 
                 } else if (received instanceof User) {
                     this.user = (User) received;
-                    System.out.println("✅ User mis à jour : " + user.getId());
+                    System.out.println("User mis à jour : " + user.getId());
                 }
             }
 
         } catch (EOFException e) {
-            System.out.println("🔌 Déconnecté du serveur !");
+            System.out.println("Déconnecté du serveur !");
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("❌ Erreur réception : " + e.getMessage());
+            System.out.println("Erreur réception : " + e.getMessage());
         }
     }
 
     public void connect() {
         try {
             socket = new Socket(serverIP, port);
-            System.out.println("✅ Connecté au serveur !");
+            System.out.println("Connecté au serveur !");
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
 
         } catch (IOException e) {
-            System.out.println("❌ Impossible de se connecter : "
+            System.out.println("Impossible de se connecter : "
                     + e.getMessage());
             if (loginWindow != null) {
                 loginWindow.showError(
@@ -125,7 +125,7 @@ public class Client implements Runnable {
                 socket.close();
             }
         } catch (IOException e) {
-            System.out.println("❌ Erreur déconnexion : "
+            System.out.println(" Erreur déconnexion : "
                     + e.getMessage());
         }
     }
@@ -133,7 +133,7 @@ public class Client implements Runnable {
     public void login(String username, String password) {
         this.user = new User(username, password);
         sendObject(this.user);
-        System.out.println("📤 Login envoyé : " + username);
+        System.out.println("Login envoyé : " + username);
 
         // Démarrer le thread d'écoute IMMÉDIATEMENT après le login
         Thread listenerThread = new Thread(this);
@@ -146,11 +146,11 @@ public class Client implements Runnable {
     }
 
     public void receiveMessage() {
-        System.out.println("📨 Message reçu !");
+        System.out.println(" Message reçu !");
     }
 
     private void receiveMessage(Message message) {
-        System.out.println("📨 Message reçu de "
+        System.out.println(" Message reçu de "
                 + message.getSender().getUsername());
         if (chatWindow != null) {
             if (message instanceof model.FileMessage) {
@@ -168,7 +168,7 @@ public class Client implements Runnable {
             currentCall = new VideoCall(user, target);
         }
         sendObject(currentCall);
-        System.out.println("📞 Appel " + type.name()
+        System.out.println(" Appel " + type.name()
                 + " vers " + target.getUsername());
     }
 
@@ -186,7 +186,7 @@ public class Client implements Runnable {
     }
 
     public void receiveCall(Call incomingCall) {
-        System.out.println("📞 Appel entrant/mis à jour : "
+        System.out.println(" Appel entrant/mis à jour : "
                 + incomingCall.getCaller().getUsername()
                 + " | Statut : " + incomingCall.getStatus());
 
@@ -216,7 +216,7 @@ public class Client implements Runnable {
                 try {
                     window.start(new Stage());
                 } catch (Exception e) {
-                    System.out.println("❌ Erreur ouverture CallWindow : "
+                    System.out.println(" Erreur ouverture CallWindow : "
                             + e.getMessage());
                 }
 
@@ -230,10 +230,10 @@ public class Client implements Runnable {
     }
 
     private void handleServerCommand(String command) {
-        System.out.println("⚙️ Commande serveur : " + command);
+        System.out.println(" Commande serveur : " + command);
 
         if (command.equals("LOGIN_SUCCESS")) {
-            System.out.println("✅ Login accepté !");
+            System.out.println("Login accepté !");
 
 
             // Ouvrir ChatWindow
@@ -251,7 +251,7 @@ public class Client implements Runnable {
             }).start();
 
         } else if (command.equals("LOGIN_FAILED")) {
-            System.out.println("❌ Login refusé !");
+            System.out.println(" Login refusé !");
             if (loginWindow != null) {
                 loginWindow.showError(
                         "Username ou mot de passe incorrect !"
@@ -268,7 +268,7 @@ public class Client implements Runnable {
                 out.reset();
             }
         } catch (IOException e) {
-            System.out.println("❌ Erreur envoi : " + e.getMessage());
+            System.out.println(" Erreur envoi : " + e.getMessage());
         }
     }
 

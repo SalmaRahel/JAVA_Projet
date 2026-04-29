@@ -66,7 +66,7 @@ public class ClientHandler implements Runnable {
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
 
-            System.out.println("🔗 Nouveau client en attente de login...");
+            System.out.println(" Nouveau client en attente de login...");
 
             Object firstObject = in.readObject();
 
@@ -91,12 +91,12 @@ public class ClientHandler implements Runnable {
                     sendObject("LOGIN_SUCCESS");
                     sendObject(dbUser);
                     sendUserList(server.getConnectedUsers());
-                    System.out.println("✅ Login réussi : "
+                    System.out.println(" Login réussi : "
                             + user.getUsername());
 
                 } else {
                     sendObject("LOGIN_FAILED");
-                    System.out.println("❌ Login échoué !");
+                    System.out.println(" Login échoué !");
                     closeConnection();
                     return;
                 }
@@ -120,11 +120,11 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (EOFException e) {
-            System.out.println("👤 Client déconnecté : "
+            System.out.println(" Client déconnecté : "
                     + (user != null ? user.getUsername() : "inconnu"));
 
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("❌ Erreur client : " + e.getMessage());
+            System.out.println(" Erreur client : " + e.getMessage());
 
         } finally {
             closeConnection();
@@ -137,7 +137,7 @@ public class ClientHandler implements Runnable {
 
     // Traiter un message reçu du client
     private void handleMessage(Message message) {
-        System.out.println("📨 Message reçu de "
+        System.out.println(" Message reçu de "
                 + message.getSender().getUsername()
                 + " → " + message.getReceiver().getUsername()
                 + " : " + message.getContent());
@@ -149,7 +149,7 @@ public class ClientHandler implements Runnable {
             if (vm.getAudioData() != null) {
                 String base64 = java.util.Base64.getEncoder().encodeToString(vm.getAudioData());
                 vm.setContent(base64);
-                System.out.println("🎤 VoiceMessage content length: " + base64.length());
+                System.out.println("VoiceMessage content length: " + base64.length());
             }
         }
         server.broadcast(message, this);
@@ -157,7 +157,7 @@ public class ClientHandler implements Runnable {
 
     // Traiter une commande reçue du client
     private void handleCommand(String command) {
-        System.out.println("⚙️ Commande reçue : " + command);
+        System.out.println(" Commande reçue : " + command);
 
         if (command.equals("GET_USERS")) {
             // Le client demande la liste des utilisateurs connectés
@@ -188,7 +188,7 @@ public class ClientHandler implements Runnable {
 
     // Traiter un appel reçu du client
     public void handleCall(call.Call call) {
-        System.out.println("📞 Appel de "
+        System.out.println("Appel de "
                 + call.getCaller().getUsername()
                 + " → " + call.getCalled().getUsername()
                 + " | Statut : " + call.getStatus());
@@ -228,7 +228,7 @@ public class ClientHandler implements Runnable {
 
     // Traiter un appel entrant
     public void handleIncomingCall() {
-        System.out.println("📞 Appel entrant pour : "
+        System.out.println(" Appel entrant pour : "
                 + user.getUsername());
     }
 
@@ -266,7 +266,7 @@ public class ClientHandler implements Runnable {
                 out.reset(); // Éviter les problèmes de cache Java
             }
         } catch (IOException e) {
-            System.out.println("❌ Erreur envoi objet : "
+            System.out.println(" Erreur envoi objet : "
                     + e.getMessage());
         }
     }
@@ -292,10 +292,10 @@ public class ClientHandler implements Runnable {
                 socket.close();
             }
 
-            System.out.println("🔌 Connexion fermée !");
+            System.out.println("Connexion fermée !");
 
         } catch (IOException e) {
-            System.out.println("❌ Erreur fermeture : " + e.getMessage());
+            System.out.println(" Erreur fermeture : " + e.getMessage());
         }
     }
 

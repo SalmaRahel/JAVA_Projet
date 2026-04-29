@@ -6,11 +6,7 @@ import java.util.UUID;
 
 // Message est la classe de base pour tous les messages de l'application.
 // Elle est Serializable pour pouvoir être envoyée via les Sockets TCP.
-// Elle est abstraite car on n'envoie jamais un "Message" générique —
-// on envoie toujours soit un message texte, soit un fichier (FileMessage).
-//
-// MAIS ATTENTION : dans notre cas on la garde NON abstraite
-// pour pouvoir créer des messages texte directement.
+
 
 public class Message implements Serializable {
 

@@ -92,7 +92,7 @@ public class AudioCall extends Call {
 
             // Vérifier que le système supporte ce format audio
             if (!AudioSystem.isLineSupported(info)) {
-                System.out.println("❌ Format audio non supporté !");
+                System.out.println("Format audio non supporté !");
                 return;
             }
 
@@ -102,10 +102,10 @@ public class AudioCall extends Call {
 
             // Démarrer la capture
             audioLine.start();
-            System.out.println("🎙️ Capture audio démarrée !");
+            System.out.println("Capture audio démarrée !");
 
         } catch (LineUnavailableException e) {
-            System.out.println("❌ Microphone non disponible : "
+            System.out.println("Microphone non disponible : "
                     + e.getMessage());
         }
     }
@@ -152,7 +152,7 @@ public class AudioCall extends Call {
             speakerLine.close();
 
         } catch (LineUnavailableException e) {
-            System.out.println("❌ Haut-parleur non disponible : "
+            System.out.println(" Haut-parleur non disponible : "
                     + e.getMessage());
         }
     }
@@ -178,7 +178,7 @@ public class AudioCall extends Call {
             speakerLine.write(data, 0, data.length);
 
         } catch (LineUnavailableException e) {
-            System.out.println("❌ Erreur lecture audio : " + e.getMessage());
+            System.out.println("Erreur lecture audio : " + e.getMessage());
         }
     }
     // Couper le microphone (mute)
@@ -187,7 +187,7 @@ public class AudioCall extends Call {
         if (audioLine != null && audioLine.isOpen()) {
             audioLine.stop(); // On arrête la capture du micro
         }
-        System.out.println("🔇 Micro coupé !");
+        System.out.println("Micro coupé !");
     }
 
     // Réactiver le microphone (unmute)
@@ -196,7 +196,7 @@ public class AudioCall extends Call {
         if (audioLine != null && audioLine.isOpen()) {
             audioLine.start(); // On reprend la capture du micro
         }
-        System.out.println("🎙️ Micro réactivé !");
+        System.out.println("Micro réactivé !");
     }
 
     // ============================================================
@@ -213,7 +213,7 @@ public class AudioCall extends Call {
         if (audioLine != null && audioLine.isOpen()) {
             audioLine.stop();
             audioLine.close();
-            System.out.println("🎙️ Microphone fermé !");
+            System.out.println("Microphone fermé !");
         }
         if (speakerLine != null && speakerLine.isOpen()) {
             speakerLine.stop();

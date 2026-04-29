@@ -15,7 +15,7 @@ import java.util.List;
 //   2. Gestion des Utilisateurs
 //   3. Gestion des Messages
 //   4. Gestion des Appels
-//   5. Gestion des Conversations
+//
 //
 // Tous les attributs et méthodes sont "static" car on n'a besoin
 // que d'UNE SEULE connexion à la base de données pour tout le
@@ -52,13 +52,13 @@ public class DatabaseManager {
                     URL, USERNAME, PASSWORD
             );
 
-            System.out.println("✅ MySQL connecté !");
+            System.out.println("MySQL connecté !");
 
         } catch (ClassNotFoundException e) {
-            System.out.println("❌ Driver MySQL introuvable : "
+            System.out.println("Driver MySQL introuvable : "
                     + e.getMessage());
         } catch (SQLException e) {
-            System.out.println("❌ Erreur connexion MySQL : "
+            System.out.println("Erreur connexion MySQL : "
                     + e.getMessage());
         }
     }
@@ -69,10 +69,10 @@ public class DatabaseManager {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
-                System.out.println("✅ MySQL déconnecté !");
+                System.out.println("MySQL déconnecté !");
             }
         } catch (SQLException e) {
-            System.out.println("❌ Erreur déconnexion MySQL : "
+            System.out.println("Erreur déconnexion MySQL : "
                     + e.getMessage());
         }
     }
@@ -95,12 +95,12 @@ public class DatabaseManager {
             stmt.setBoolean(4, user.isOnline());
             stmt.setString(5, user.getProfilePhoto());
             stmt.executeUpdate();
-            System.out.println("✅ Utilisateur ajouté : "
+            System.out.println("Utilisateur ajouté : "
                     + user.getUsername());
             return true;
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur ajout utilisateur : "
+            System.out.println("Erreur ajout utilisateur : "
                     + e.getMessage());
             return false;
         }
@@ -128,12 +128,12 @@ public class DatabaseManager {
                 );
                 user.setOnline(rs.getBoolean("is_online"));
                 user.setProfilePhoto(rs.getString("profile_photo"));
-                System.out.println("✅ Login trouvé : " + username);
+                System.out.println("Login trouvé : " + username);
                 return user;
             }
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur login : "
+            System.out.println("Erreur login : "
                     + e.getMessage());
         }
         return null; // Utilisateur non trouvé
@@ -149,11 +149,11 @@ public class DatabaseManager {
             stmt.setBoolean(1, isOnline);
             stmt.setString(2, userId);
             stmt.executeUpdate();
-            System.out.println("✅ Statut mis à jour : "
+            System.out.println("Statut mis à jour : "
                     + userId + " → " + isOnline);
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur statut : "
+            System.out.println("Erreur statut : "
                     + e.getMessage());
         }
     }
@@ -180,7 +180,7 @@ public class DatabaseManager {
             }
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur liste utilisateurs : "
+            System.out.println("Erreur liste utilisateurs : "
                     + e.getMessage());
         }
         return users;
@@ -197,7 +197,7 @@ public class DatabaseManager {
             return rs.next(); // true si une ligne trouvée
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur vérification username : "
+            System.out.println(" Erreur vérification username : "
                     + e.getMessage());
         }
         return false;
@@ -225,11 +225,11 @@ public class DatabaseManager {
                     new Timestamp(message.getTimestamp().getTime()));
             stmt.setBoolean(7, false);
             stmt.executeUpdate();
-            System.out.println("✅ Message sauvegardé !");
+            System.out.println(" Message sauvegardé !");
             return true;
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur sauvegarde message : "
+            System.out.println(" Erreur sauvegarde message : "
                     + e.getMessage());
             e.printStackTrace();
             return false;
@@ -309,7 +309,7 @@ public class DatabaseManager {
             }
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur historique messages : "
+            System.out.println(" Erreur historique messages : "
                     + e.getMessage());
         }
         return messages;
@@ -340,11 +340,11 @@ public class DatabaseManager {
             stmt.setTimestamp(6,
                     new Timestamp(System.currentTimeMillis()));
             stmt.executeUpdate();
-            System.out.println("✅ Appel sauvegardé !");
+            System.out.println("Appel sauvegardé !");
             return true;
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur sauvegarde appel : "
+            System.out.println(" Erreur sauvegarde appel : "
                     + e.getMessage());
             return false;
         }
@@ -364,10 +364,10 @@ public class DatabaseManager {
                     new Timestamp(System.currentTimeMillis()));
             stmt.setString(3, callId);
             stmt.executeUpdate();
-            System.out.println("✅ Statut appel mis à jour !");
+            System.out.println("Statut appel mis à jour !");
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur statut appel : "
+            System.out.println("Erreur statut appel : "
                     + e.getMessage());
         }
     }
@@ -391,11 +391,11 @@ public class DatabaseManager {
             stmt.setString(3,
                     conversation.getParticipant2().getId());
             stmt.executeUpdate();
-            System.out.println("✅ Conversation sauvegardée !");
+            System.out.println("Conversation sauvegardée !");
             return true;
 
         } catch (SQLException e) {
-            System.out.println("❌ Erreur sauvegarde conversation : "
+            System.out.println("Erreur sauvegarde conversation : "
                     + e.getMessage());
             return false;
         }
@@ -410,10 +410,10 @@ public class DatabaseManager {
             stmt.setString(2, newPassword);
             stmt.setString(3, userId);
             stmt.executeUpdate();
-            System.out.println("✅ Profil mis à jour : " + newUsername);
+            System.out.println("Profil mis à jour : " + newUsername);
             return true;
         } catch (SQLException e) {
-            System.out.println("❌ Erreur mise à jour profil : " + e.getMessage());
+            System.out.println("Erreur mise à jour profil : " + e.getMessage());
             return false;
         }
     }
@@ -426,10 +426,10 @@ public class DatabaseManager {
             stmt.setString(1, photoBase64);
             stmt.setString(2, userId);
             stmt.executeUpdate();
-            System.out.println("✅ Photo de profil mise à jour !");
+            System.out.println("Photo de profil mise à jour !");
             return true;
         } catch (SQLException e) {
-            System.out.println("❌ Erreur photo profil : " + e.getMessage());
+            System.out.println("Erreur photo profil : " + e.getMessage());
             return false;
         }
     }
@@ -447,10 +447,10 @@ public class DatabaseManager {
             stmt.setString(4, fileType);
             stmt.setLong(5, fileSize);
             stmt.executeUpdate();
-            System.out.println("✅ Fichier sauvegardé en BD !");
+            System.out.println("Fichier sauvegardé en BD !");
             return true;
         } catch (SQLException e) {
-            System.out.println("❌ Erreur sauvegarde fichier : " + e.getMessage());
+            System.out.println(" Erreur sauvegarde fichier : " + e.getMessage());
             return false;
         }
     }
@@ -475,7 +475,7 @@ public class DatabaseManager {
                 }};
             }
         } catch (SQLException e) {
-            System.out.println("❌ Erreur récupération fichier : " + e.getMessage());
+            System.out.println(" Erreur récupération fichier : " + e.getMessage());
         }
         return null;
     }
