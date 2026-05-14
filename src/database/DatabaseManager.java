@@ -29,7 +29,7 @@ public class DatabaseManager {
 
     // Informations de connexion à MySQL via XAMPP
     private static final String URL =
-            "jdbc:mysql://localhost:3306/whatsapp_db";
+            "jdbc:mysql://172.20.10.14:3306/whatsapp_db";
     private static final String USERNAME = "root";
     private static final String PASSWORD = ""; // Vide par défaut avec XAMPP
 
