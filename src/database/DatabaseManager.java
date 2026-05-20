@@ -4,7 +4,7 @@ import java.sql.*;
 
 public class DatabaseManager {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/whatsapp_db";
+    private static final String URL = "jdbc:mysql://10.161.90.69:3306/whatsapp_db";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "";
 
