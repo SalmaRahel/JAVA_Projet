@@ -1,51 +1,47 @@
 package ui;
 
 import client.Client;
-import database.DatabaseManager;
+import database.UserDAO;
 import model.User;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class LoginWindow extends Application {
 
-    // ============================================================
-    // ATTRIBUTS
-    // ============================================================
+    private static final String BG_APP    = "#F0F4F3";
+    private static final String BG_WHITE  = "#FFFFFF";
+    private static final String BG_INPUT  = "#F7FAF9";
+    private static final String GREEN     = "#075E54";
+    private static final String GREEN_MID = "#128C7E";
+    private static final String GREEN_LT  = "#25D366";
+    private static final String GREEN_PALE= "#E8F5E9";
+    private static final String BORDER    = "#E5E7EB";
+    private static final String TEXT_DARK = "#111827";
+    private static final String TEXT_MID  = "#4B5563";
+    private static final String TEXT_LITE = "#9CA3AF";
+
     private Client client;
     private TextField usernameField;
     private PasswordField passwordField;
     private Button connectButton;
-    private Button registerButton;
     private Label statusLabel;
     private Stage stage;
 
-    // true = on affiche le formulaire de login
-    // false = on affiche le formulaire d'inscription
-    private boolean isLoginMode = true;
+    public LoginWindow() { }
+    public LoginWindow(Client client) { this.client = client; }
 
-    // ============================================================
-    // CONSTRUCTEURS
-    // ============================================================
-    public LoginWindow() {
-        this.client = null;
-    }
-
-    public LoginWindow(Client client) {
-        this.client = client;
-    }
-
-    // ============================================================
-    // MÉTHODE start()
-    // ============================================================
     @Override
     public void start(Stage primaryStage) {
         this.stage = primaryStage;
@@ -54,366 +50,268 @@ public class LoginWindow extends Application {
         primaryStage.show();
     }
 
-    // ============================================================
-    // CONSTRUIRE L'INTERFACE LOGIN
-    // ============================================================
     private void buildLoginUI() {
-        isLoginMode = true;
         stage.setTitle("WhatsApp — Connexion");
+        VBox leftPanel = buildLeftPanel();
 
-        // ── Titre ──
-        Label titleLabel = new Label("💬 WhatsApp");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        titleLabel.setTextFill(Color.web("#25D366"));
+        Label titleLbl = new Label("Bon retour !");
+        titleLbl.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
+        titleLbl.setTextFill(Color.web(TEXT_DARK));
 
-        Label subtitleLabel = new Label("Connectez-vous pour continuer");
-        subtitleLabel.setFont(Font.font("Arial", 14));
-        subtitleLabel.setTextFill(Color.GRAY);
+        Label subLbl = new Label("Connectez-vous pour continuer");
+        subLbl.setFont(Font.font("Segoe UI", 13));
+        subLbl.setTextFill(Color.web(TEXT_LITE));
 
-        // ── Champ Username ──
-        Label usernameLabel = new Label("Nom d'utilisateur");
-        usernameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        VBox usernameBox = buildField("NOM D'UTILISATEUR", "ex: salma123", false);
+        usernameField = (TextField) usernameBox.lookup(".login-field");
 
-        usernameField = new TextField();
-        usernameField.setPromptText("Entrez votre nom d'utilisateur");
-        usernameField.setPrefHeight(40);
-        usernameField.setStyle(
-                "-fx-border-color: #cccccc;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8;"
-        );
+        VBox passwordBox = buildField("MOT DE PASSE", "••••••••", true);
+        passwordField = (PasswordField) passwordBox.lookup(".login-pass");
 
-        // ── Champ Password ──
-        Label passwordLabel = new Label("Mot de passe");
-        passwordLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        connectButton = buildPrimaryBtn("Se connecter");
+        connectButton.setOnAction(e -> onConnect());
+        if (passwordField != null) passwordField.setOnAction(e -> onConnect());
 
-        passwordField = new PasswordField();
-        passwordField.setPromptText("Entrez votre mot de passe");
-        passwordField.setPrefHeight(40);
-        passwordField.setStyle(
-                "-fx-border-color: #cccccc;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8;"
-        );
+        Region divider = new Region();
+        divider.setPrefHeight(1);
+        divider.setStyle("-fx-background-color: " + BORDER + ";");
 
-        // ── Bouton Se connecter ──
-        connectButton = new Button("Se connecter");
-        connectButton.setPrefHeight(45);
-        connectButton.setPrefWidth(300);
-        connectButton.setStyle(
-                "-fx-background-color: #25D366;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 14px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-cursor: hand;"
-        );
-        connectButton.setOnAction(event -> onConnect());
-        passwordField.setOnAction(event -> onConnect());
+        Button switchBtn = new Button("Pas de compte ?   S'inscrire \u2192");
+        switchBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + GREEN + "; -fx-cursor: hand; -fx-font-family: 'Segoe UI'; -fx-font-size: 13px; -fx-padding: 0;");
+        switchBtn.setOnMouseEntered(e -> switchBtn.setTextFill(Color.web(GREEN_LT)));
+        switchBtn.setOnMouseExited(e -> switchBtn.setTextFill(Color.web(GREEN)));
+        switchBtn.setOnAction(e -> buildRegisterUI());
 
-        // ── Bouton S'inscrire ──
-        registerButton = new Button("Pas de compte ? S'inscrire");
-        registerButton.setPrefHeight(35);
-        registerButton.setPrefWidth(300);
-        registerButton.setStyle(
-                "-fx-background-color: transparent;" +
-                        "-fx-text-fill: #075E54;" +
-                        "-fx-font-size: 13px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-color: #075E54;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;"
-        );
-        registerButton.setOnAction(event -> buildRegisterUI());
-
-        // ── Label statut ──
         statusLabel = new Label("");
-        statusLabel.setTextFill(Color.RED);
-        statusLabel.setFont(Font.font("Arial", 12));
+        statusLabel.setFont(Font.font("Segoe UI", 12));
+        statusLabel.setWrapText(true);
 
-        // ── Layout ──
-        VBox layout = new VBox(15);
-        layout.setPadding(new Insets(40));
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: white;");
-        layout.setPrefWidth(380);
+        HBox switchBox = new HBox(switchBtn);
+        switchBox.setAlignment(Pos.CENTER);
 
-        layout.getChildren().addAll(
-                titleLabel,
-                subtitleLabel,
-                new Separator(),
-                usernameLabel,
-                usernameField,
-                passwordLabel,
-                passwordField,
-                connectButton,
-                registerButton,
-                statusLabel
+        VBox form = new VBox(18,
+                new VBox(5, titleLbl, subLbl),
+                spacer(10),
+                usernameBox, passwordBox,
+                connectButton, divider,
+                switchBox, statusLabel
         );
+        form.setPadding(new Insets(50, 52, 44, 52));
+        form.setAlignment(Pos.CENTER_LEFT);
+        form.setStyle("-fx-background-color: " + BG_WHITE + ";");
+        HBox.setHgrow(form, Priority.ALWAYS);
 
-        Scene scene = new Scene(layout, 380, 500);
+        HBox root = new HBox(leftPanel, form);
+        root.setStyle("-fx-background-color: " + BG_APP + ";");
+        Scene scene = new Scene(root, 720, 490);
         stage.setScene(scene);
         stage.setResizable(false);
+
+        root.setOpacity(0);
+        FadeTransition ft = new FadeTransition(Duration.millis(500), root);
+        ft.setFromValue(0); ft.setToValue(1); ft.play();
     }
 
-    // ============================================================
-    // CONSTRUIRE L'INTERFACE INSCRIPTION
-    // ============================================================
     private void buildRegisterUI() {
-        isLoginMode = false;
         stage.setTitle("WhatsApp — Inscription");
+        VBox leftPanel = buildLeftPanel();
 
-        // ── Titre ──
-        Label titleLabel = new Label("💬 WhatsApp");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        titleLabel.setTextFill(Color.web("#25D366"));
+        Label titleLbl = new Label("Créer un compte");
+        titleLbl.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
+        titleLbl.setTextFill(Color.web(TEXT_DARK));
 
-        Label subtitleLabel = new Label("Créez votre compte");
-        subtitleLabel.setFont(Font.font("Arial", 14));
-        subtitleLabel.setTextFill(Color.GRAY);
+        Label subLbl = new Label("Rejoignez WhatsApp gratuitement");
+        subLbl.setFont(Font.font("Segoe UI", 13));
+        subLbl.setTextFill(Color.web(TEXT_LITE));
 
-        // ── Champ Username ──
-        Label usernameLabel = new Label("Nom d'utilisateur");
-        usernameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        VBox usernameBox = buildField("NOM D'UTILISATEUR", "Choisissez un nom", false);
+        usernameField = (TextField) usernameBox.lookup(".login-field");
 
-        usernameField = new TextField();
-        usernameField.setPromptText("Choisissez un nom d'utilisateur");
-        usernameField.setPrefHeight(40);
-        usernameField.setStyle(
-                "-fx-border-color: #cccccc;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8;"
-        );
+        VBox passwordBox = buildField("MOT DE PASSE", "Min. 4 caracteres", true);
+        passwordField = (PasswordField) passwordBox.lookup(".login-pass");
 
-        // ── Champ Password ──
-        Label passwordLabel = new Label("Mot de passe");
-        passwordLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        VBox confirmBox = buildField("CONFIRMER", "Repetez le mot de passe", true);
+        PasswordField confirmField = (PasswordField) confirmBox.lookup(".login-pass");
 
-        passwordField = new PasswordField();
-        passwordField.setPromptText("Choisissez un mot de passe");
-        passwordField.setPrefHeight(40);
-        passwordField.setStyle(
-                "-fx-border-color: #cccccc;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8;"
-        );
+        Button createBtn = buildPrimaryBtn("Creer le compte");
+        createBtn.setOnAction(e -> onRegister(confirmField != null ? confirmField.getText() : ""));
 
-        // ── Champ Confirm Password ──
-        Label confirmLabel = new Label("Confirmer le mot de passe");
-        confirmLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        Region divider = new Region();
+        divider.setPrefHeight(1);
+        divider.setStyle("-fx-background-color: " + BORDER + ";");
 
-        PasswordField confirmField = new PasswordField();
-        confirmField.setPromptText("Confirmez votre mot de passe");
-        confirmField.setPrefHeight(40);
-        confirmField.setStyle(
-                "-fx-border-color: #cccccc;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-padding: 8;"
-        );
+        Button backBtn = new Button("\u2190  Deja un compte ? Se connecter");
+        backBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + GREEN + "; -fx-cursor: hand; -fx-font-family: 'Segoe UI'; -fx-font-size: 13px; -fx-padding: 0;");
+        backBtn.setOnMouseEntered(e -> backBtn.setTextFill(Color.web(GREEN_LT)));
+        backBtn.setOnMouseExited(e -> backBtn.setTextFill(Color.web(GREEN)));
+        backBtn.setOnAction(e -> buildLoginUI());
 
-        // ── Bouton S'inscrire ──
-        Button createButton = new Button("Créer le compte");
-        createButton.setPrefHeight(45);
-        createButton.setPrefWidth(300);
-        createButton.setStyle(
-                "-fx-background-color: #25D366;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 14px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-cursor: hand;"
-        );
-        createButton.setOnAction(event -> {
-            onRegister(confirmField.getText());
-        });
-
-        // ── Bouton Retour au login ──
-        Button backButton = new Button("Déjà un compte ? Se connecter");
-        backButton.setPrefHeight(35);
-        backButton.setPrefWidth(300);
-        backButton.setStyle(
-                "-fx-background-color: transparent;" +
-                        "-fx-text-fill: #075E54;" +
-                        "-fx-font-size: 13px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-color: #075E54;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-background-radius: 8;"
-        );
-        backButton.setOnAction(event -> buildLoginUI());
-
-        // ── Label statut ──
         statusLabel = new Label("");
-        statusLabel.setTextFill(Color.RED);
-        statusLabel.setFont(Font.font("Arial", 12));
+        statusLabel.setFont(Font.font("Segoe UI", 12));
+        statusLabel.setWrapText(true);
 
-        // ── Layout ──
-        VBox layout = new VBox(15);
-        layout.setPadding(new Insets(40));
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: white;");
-        layout.setPrefWidth(380);
+        HBox backBox = new HBox(backBtn);
+        backBox.setAlignment(Pos.CENTER);
 
-        layout.getChildren().addAll(
-                titleLabel,
-                subtitleLabel,
-                new Separator(),
-                usernameLabel,
-                usernameField,
-                passwordLabel,
-                passwordField,
-                confirmLabel,
-                confirmField,
-                createButton,
-                backButton,
-                statusLabel
+        VBox form = new VBox(14,
+                new VBox(5, titleLbl, subLbl),
+                spacer(6),
+                usernameBox, passwordBox, confirmBox,
+                createBtn, divider, backBox, statusLabel
         );
+        form.setPadding(new Insets(40, 52, 36, 52));
+        form.setAlignment(Pos.CENTER_LEFT);
+        form.setStyle("-fx-background-color: " + BG_WHITE + ";");
+        HBox.setHgrow(form, Priority.ALWAYS);
 
-        Scene scene = new Scene(layout, 380, 580);
+        HBox root = new HBox(leftPanel, form);
+        root.setStyle("-fx-background-color: " + BG_APP + ";");
+        Scene scene = new Scene(root, 720, 560);
         stage.setScene(scene);
+
+        root.setOpacity(0);
+        FadeTransition ft = new FadeTransition(Duration.millis(400), root);
+        ft.setFromValue(0); ft.setToValue(1); ft.play();
     }
 
-    // ============================================================
-    // MÉTHODES D'ACTION
-    // ============================================================
+    private VBox buildLeftPanel() {
+        Circle orbOut = new Circle(52);
+        orbOut.setFill(Color.TRANSPARENT);
+        orbOut.setStroke(Color.web(GREEN, 0.10));
+        orbOut.setStrokeWidth(30);
+        Circle orbMid = new Circle(34, Color.web(GREEN_PALE));
+        Circle orbCore = new Circle(20, Color.web(GREEN));
+        Label logoLbl = new Label("W");
+        logoLbl.setFont(Font.font("Georgia", FontWeight.BOLD, 22));
+        logoLbl.setTextFill(Color.WHITE);
+        javafx.scene.layout.StackPane orb = new javafx.scene.layout.StackPane(orbOut, orbMid, orbCore, logoLbl);
+        orb.setPrefSize(130, 130);
+        ScaleTransition pulse = new ScaleTransition(Duration.seconds(2.8), orb);
+        pulse.setFromX(1); pulse.setToX(1.06); pulse.setFromY(1); pulse.setToY(1.06);
+        pulse.setAutoReverse(true); pulse.setCycleCount(Animation.INDEFINITE); pulse.play();
 
-    // Connexion
-    public void onConnect() {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText();
+        Label appName = new Label("WhatsApp");
+        appName.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
+        appName.setTextFill(Color.web(GREEN));
 
-        if (username.isEmpty()) {
-            showError("Veuillez entrer votre nom d'utilisateur !");
-            return;
+        Region line = new Region();
+        line.setPrefSize(50, 2);
+        line.setStyle("-fx-background-color: " + GREEN_LT + "; -fx-background-radius: 1;");
+        HBox lineBox = new HBox(line); lineBox.setAlignment(Pos.CENTER);
+
+        Label tagline = new Label("Messagerie simple\net securisee");
+        tagline.setFont(Font.font("Segoe UI", 13));
+        tagline.setTextFill(Color.web(TEXT_MID));
+        tagline.setTextAlignment(TextAlignment.CENTER);
+
+        HBox dots = new HBox(7); dots.setAlignment(Pos.CENTER);
+        String[] dColors = {TEXT_LITE, GREEN_LT, TEXT_LITE};
+        int[] dSizes = {4, 6, 4};
+        for (int i = 0; i < 3; i++) {
+            Circle d = new Circle(dSizes[i], Color.web(dColors[i]));
+            if (i == 1) { DropShadow g = new DropShadow(); g.setColor(Color.web(GREEN_LT, 0.5)); g.setRadius(6); d.setEffect(g); }
+            dots.getChildren().add(d);
         }
-        if (password.isEmpty()) {
-            showError("Veuillez entrer votre mot de passe !");
-            return;
-        }
 
-        connectButton.setDisable(true);
-        connectButton.setText("Connexion...");
-        statusLabel.setText("");
-
-        if (client != null) {
-            client.connect();
-            client.login(username, password);
-        }
+        VBox panel = new VBox(18, orb, appName, lineBox, tagline, dots);
+        panel.setAlignment(Pos.CENTER);
+        panel.setPrefWidth(265);
+        panel.setPadding(new Insets(40, 20, 40, 20));
+        panel.setStyle("-fx-background-color: " + BG_APP + "; -fx-border-color: transparent " + BORDER + " transparent transparent; -fx-border-width: 0 1.5 0 0;");
+        return panel;
     }
 
-    // Inscription
-    private void onRegister(String confirmPassword) {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText();
-
-        // Vérifications
-        if (username.isEmpty()) {
-            showError("Veuillez entrer un nom d'utilisateur !");
-            return;
-        }
-        if (username.length() < 3) {
-            showError("Le nom d'utilisateur doit avoir au moins 3 caractères !");
-            return;
-        }
-        if (password.isEmpty()) {
-            showError("Veuillez entrer un mot de passe !");
-            return;
-        }
-        if (password.length() < 4) {
-            showError("Le mot de passe doit avoir au moins 4 caractères !");
-            return;
-        }
-        if (!password.equals(confirmPassword)) {
-            showError("Les mots de passe ne correspondent pas !");
-            return;
-        }
-
-        // Vérifier si le username existe déjà
-        if (DatabaseManager.usernameExists(username)) {
-            showError("Ce nom d'utilisateur est déjà pris !");
-            return;
-        }
-
-        // Créer le nouvel utilisateur
-        User newUser = new User(username, password);
-        boolean success = DatabaseManager.addUser(newUser);
-
-        if (success) {
-            showSuccess("✅ Compte créé ! Connectez-vous maintenant.");
-            // Retourner au login après 2 secondes
-            new Thread(() -> {
-                try {
-                    Thread.sleep(1500);
-                    Platform.runLater(() -> buildLoginUI());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
+    private VBox buildField(String label, String prompt, boolean isPass) {
+        Label lbl = new Label(label);
+        lbl.setFont(Font.font("Segoe UI", FontWeight.BOLD, 10));
+        lbl.setTextFill(Color.web(TEXT_MID));
+        String base = "-fx-background-color: " + BG_INPUT + "; -fx-border-color: " + BORDER + "; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 0 16; -fx-font-size: 13px; -fx-font-family: 'Segoe UI'; -fx-text-fill: " + TEXT_DARK + "; -fx-prompt-text-fill: " + TEXT_LITE + ";";
+        String focused = "-fx-background-color: white; -fx-border-color: " + GREEN + "; -fx-border-width: 1.5; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 0 16; -fx-font-size: 13px; -fx-font-family: 'Segoe UI'; -fx-text-fill: " + TEXT_DARK + "; -fx-prompt-text-fill: " + TEXT_LITE + ";";
+        if (isPass) {
+            PasswordField f = new PasswordField();
+            f.setPromptText(prompt); f.setPrefHeight(46);
+            f.getStyleClass().add("login-pass"); f.setStyle(base);
+            f.focusedProperty().addListener((o, old, on) -> { f.setStyle(on ? focused : base); if (on) { DropShadow s = new DropShadow(); s.setColor(Color.web(GREEN, 0.15)); s.setRadius(8); f.setEffect(s); } else f.setEffect(null); });
+            return new VBox(6, lbl, f);
         } else {
-            showError("Erreur lors de la création du compte !");
+            TextField f = new TextField();
+            f.setPromptText(prompt); f.setPrefHeight(46);
+            f.getStyleClass().add("login-field"); f.setStyle(base);
+            f.focusedProperty().addListener((o, old, on) -> { f.setStyle(on ? focused : base); if (on) { DropShadow s = new DropShadow(); s.setColor(Color.web(GREEN, 0.15)); s.setRadius(8); f.setEffect(s); } else f.setEffect(null); });
+            return new VBox(6, lbl, f);
         }
     }
 
-    // ============================================================
-    // MÉTHODES UTILITAIRES
-    // ============================================================
+    private Button buildPrimaryBtn(String text) {
+        Button btn = new Button(text);
+        btn.setMaxWidth(Double.MAX_VALUE); btn.setPrefHeight(48);
+        btn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        btn.setStyle("-fx-background-color: " + GREEN + "; -fx-text-fill: white; -fx-background-radius: 14; -fx-cursor: hand;");
+        DropShadow s = new DropShadow(); s.setColor(Color.web(GREEN, 0.30)); s.setRadius(12); s.setOffsetY(4); btn.setEffect(s);
+        btn.setOnMouseEntered(e -> { btn.setStyle("-fx-background-color: " + GREEN_MID + "; -fx-text-fill: white; -fx-background-radius: 14; -fx-cursor: hand;"); DropShadow s2 = new DropShadow(); s2.setColor(Color.web(GREEN, 0.45)); s2.setRadius(16); s2.setOffsetY(5); btn.setEffect(s2); });
+        btn.setOnMouseExited(e -> { btn.setStyle("-fx-background-color: " + GREEN + "; -fx-text-fill: white; -fx-background-radius: 14; -fx-cursor: hand;"); btn.setEffect(s); });
+        return btn;
+    }
 
-    public void showError(String message) {
+    private Region spacer(int h) { Region r = new Region(); r.setPrefHeight(h); return r; }
+
+    // ── Logique ──────────────────────────────────────────────────
+
+    public void onConnect() {
+        String u = usernameField != null ? usernameField.getText().trim() : "";
+        String p = passwordField != null ? passwordField.getText() : "";
+        if (u.isEmpty()) { showError("Entrez votre nom d'utilisateur !"); return; }
+        if (p.isEmpty()) { showError("Entrez votre mot de passe !"); return; }
+        if (connectButton != null) { connectButton.setDisable(true); connectButton.setText("Connexion..."); }
+        statusLabel.setText("");
+        if (client != null) { client.connect(); client.login(u, p); }
+    }
+
+    private void onRegister(String confirm) {
+        String u = usernameField != null ? usernameField.getText().trim() : "";
+        String p = passwordField != null ? passwordField.getText() : "";
+        if (u.isEmpty()) { showError("Entrez un nom d'utilisateur !"); return; }
+        if (u.length() < 3) { showError("Minimum 3 caracteres !"); return; }
+        if (p.isEmpty()) { showError("Entrez un mot de passe !"); return; }
+        if (p.length() < 4) { showError("Minimum 4 caracteres !"); return; }
+        if (!p.equals(confirm)) { showError("Les mots de passe ne correspondent pas !"); return; }
+        // DAO : UserDAO
+        if (UserDAO.usernameExists(u)) { showError("Ce nom est deja pris !"); return; }
+        boolean ok = UserDAO.addUser(new User(u, p));
+        if (ok) {
+            showSuccess("Compte cree !  Connectez-vous.");
+            new Thread(() -> { try { Thread.sleep(1500); Platform.runLater(this::buildLoginUI); } catch (Exception e) { e.printStackTrace(); } }).start();
+        } else { showError("Erreur lors de la creation !"); }
+    }
+
+    public void showError(String msg) {
         Platform.runLater(() -> {
-            statusLabel.setText("❌ " + message);
-            statusLabel.setTextFill(Color.RED);
-            if (connectButton != null) {
-                connectButton.setDisable(false);
-                connectButton.setText("Se connecter");
-            }
+            statusLabel.setText("\u274C  " + msg);
+            statusLabel.setTextFill(Color.web("#EF4444"));
+            if (connectButton != null) { connectButton.setDisable(false); connectButton.setText("Se connecter"); }
         });
     }
 
-    public void showSuccess(String message) {
+    public void showSuccess(String msg) {
         Platform.runLater(() -> {
-            statusLabel.setText(message);
-            statusLabel.setTextFill(Color.GREEN);
+            statusLabel.setText("\u2713  " + msg);
+            statusLabel.setTextFill(Color.web(GREEN_LT));
         });
     }
 
     public void openChatWindow() {
         Platform.runLater(() -> {
             try {
-                ChatWindow chatWindow = new ChatWindow(client);
-                client.setChatWindow(chatWindow);
-                chatWindow.start(new Stage());
+                ChatWindow cw = new ChatWindow(client);
+                client.setChatWindow(cw);
+                cw.start(new Stage());
                 stage.close();
-            } catch (Exception e) {
-                System.out.println("❌ Erreur ouverture ChatWindow : "
-                        + e.getMessage());
-            }
+            } catch (Exception e) { System.out.println("Erreur : " + e.getMessage()); }
         });
     }
 
-    public void close() {
-        Platform.runLater(() -> {
-            if (stage != null) stage.close();
-        });
-    }
-
-    public String getUsername() {
-        return usernameField != null
-                ? usernameField.getText().trim() : "";
-    }
-
-    public String getPassword() {
-        return passwordField != null
-                ? passwordField.getText() : "";
-    }
-
-    public static void main(String[] args) {
-        launch(args);
-    }
+    public void close() { Platform.runLater(() -> { if (stage != null) stage.close(); }); }
+    public String getUsername() { return usernameField != null ? usernameField.getText().trim() : ""; }
+    public String getPassword() { return passwordField != null ? passwordField.getText() : ""; }
+    public static void main(String[] args) { launch(args); }
 }

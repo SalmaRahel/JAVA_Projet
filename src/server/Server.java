@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
-
 public class Server {
 
     private int port;
@@ -37,41 +36,33 @@ public class Server {
             serverSocket = new ServerSocket(port);
             isRunning = true;
             System.out.println("Serveur démarré sur le port " + port);
-            System.out.println("En attente de connexions...");
 
             while (isRunning) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Nouveau client connecté : " + clientSocket.getInetAddress());
-
+                System.out.println("Nouveau client : " + clientSocket.getInetAddress());
                 ClientHandler handler = new ClientHandler(clientSocket, this);
-                Thread thread = new Thread(handler);
-                thread.start();
+                new Thread(handler).start();
             }
 
         } catch (IOException e) {
-            if (isRunning) {
-                System.out.println("Erreur serveur : " + e.getMessage());
-            }
+            if (isRunning) System.out.println("Erreur serveur : " + e.getMessage());
         }
     }
 
     public void stop() {
         try {
             isRunning = false;
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-            }
+            if (serverSocket != null && !serverSocket.isClosed()) serverSocket.close();
             DatabaseManager.disconnect();
             System.out.println("Serveur arrêté !");
         } catch (IOException e) {
-            System.out.println("Erreur arrêt serveur : " + e.getMessage());
+            System.out.println("Erreur arrêt : " + e.getMessage());
         }
     }
 
     public synchronized void addClient(String username, ClientHandler handler) {
         clientMap.put(username, handler);
-        System.out.println("Utilisateur connecté : " + username);
-        System.out.println("Total connectés : " + clientMap.size());
+        System.out.println("Connecté : " + username + " | Total : " + clientMap.size());
         notifyUserList();
     }
 
@@ -84,9 +75,7 @@ public class Server {
 
     public synchronized List<User> getConnectedUsers() {
         List<User> users = new ArrayList<>();
-        for (ClientHandler handler : clientMap.values()) {
-            users.add(handler.getUser());
-        }
+        for (ClientHandler handler : clientMap.values()) users.add(handler.getUser());
         return users;
     }
 
@@ -96,9 +85,6 @@ public class Server {
 
         if (receiverHandler != null) {
             receiverHandler.sendMessage(message);
-            System.out.println("Message : "
-                    + message.getSender().getUsername()
-                    + " → " + receiverUsername);
         } else {
             System.out.println("Destinataire non connecté : " + receiverUsername);
         }
@@ -110,37 +96,28 @@ public class Server {
             model.FileMessage fm = (model.FileMessage) message;
             MessageDAO.saveMessage(message);
             if (fm.getFileData() != null && fm.getFileData().length > 0) {
-                FileDAO.saveFileData(
-                        fm.getId(), fm.getFileData(),
-                        fm.getFileName(), fm.getFileType(), fm.getFileSize()
-                );
+                FileDAO.saveFileData(fm.getId(), fm.getFileData(),
+                        fm.getFileName(), fm.getFileType(), fm.getFileSize());
             }
         }
     }
 
     public synchronized void forwardCall(call.Call call, String targetUsername) {
-        ClientHandler targetHandler = clientMap.get(targetUsername);
-        if (targetHandler != null) {
-            targetHandler.sendObject(call);
-            System.out.println("Appel transmis à : " + targetUsername
-                    + " | Statut : " + call.getStatus());
-        } else {
-            System.out.println("Utilisateur cible non connecté : " + targetUsername);
+        ClientHandler target = clientMap.get(targetUsername);
+        if (target != null) {
+            target.sendObject(call);
+            System.out.println("Appel → " + targetUsername + " | " + call.getStatus());
         }
     }
 
     public synchronized void broadcastAudio(byte[] data, ClientHandler sender, String targetUsername) {
         ClientHandler target = clientMap.get(targetUsername);
-        if (target != null && !target.equals(sender)) {
-            target.sendAudioData(data);
-        }
+        if (target != null && !target.equals(sender)) target.sendAudioData(data);
     }
 
     public synchronized void broadcastVideo(byte[] data, ClientHandler sender, String targetUsername) {
         ClientHandler target = clientMap.get(targetUsername);
-        if (target != null && !target.equals(sender)) {
-            target.sendVideoData(data);
-        }
+        if (target != null && !target.equals(sender)) target.sendVideoData(data);
     }
 
     public synchronized ClientHandler getClientHandler(String username) {
@@ -149,43 +126,30 @@ public class Server {
 
     public synchronized void notifyUserList() {
         List<User> connectedUsers = getConnectedUsers();
-        for (ClientHandler handler : clientMap.values()) {
-            handler.sendUserList(connectedUsers);
-        }
+        for (ClientHandler handler : clientMap.values()) handler.sendUserList(connectedUsers);
     }
 
     public void broadcastCommand(String command, String targetUsername) {
         ClientHandler target = clientMap.get(targetUsername);
-        if (target != null) {
-            target.sendObject(command);
-        }
+        if (target != null) target.sendObject(command);
     }
 
     public boolean isUserConnected(String username) {
         return clientMap.containsKey(username);
     }
 
-    // ═══════════════════════════════════════════════════════════════
-// À AJOUTER dans Server.java
-// ═══════════════════════════════════════════════════════════════
-
-    // Retrouver le username d'un user par son ID
-    // Utilisé pour les invitations de groupe
     public synchronized String getUsernameById(String userId) {
         for (ClientHandler handler : clientMap.values()) {
-            if (handler.getUser() != null && handler.getUser().getId().equals(userId)) {
+            if (handler.getUser() != null && handler.getUser().getId().equals(userId))
                 return handler.getUser().getUsername();
-            }
         }
-        // Si pas connecté → chercher en BD
         try {
             java.lang.reflect.Field f = database.DatabaseManager.class.getDeclaredField("connection");
             f.setAccessible(true);
             java.sql.Connection conn = (java.sql.Connection) f.get(null);
             if (conn != null) {
                 java.sql.PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT username FROM users WHERE id = ?"
-                );
+                        "SELECT username FROM users WHERE id = ?");
                 stmt.setString(1, userId);
                 java.sql.ResultSet rs = stmt.executeQuery();
                 if (rs.next()) return rs.getString("username");
@@ -211,26 +175,44 @@ public class Server {
         return p != null ? new HashSet<>(p) : new HashSet<>();
     }
 
+    // FIX ECHO : on préfixe les bytes audio avec "MAUDIO:<senderUsername>:"
+    // Comme ça le client peut identifier QUI parle et utiliser sa propre SourceDataLine.
+    // Sans identifiant → tous les paquets vont dans la même ligne → echo + superposition.
     public synchronized void broadcastMeetingAudio(String meetingId, byte[] audioData, ClientHandler sender) {
         Set<String> participants = activeMeetings.get(meetingId);
         if (participants == null) return;
+
+        String senderName = sender.getUser().getUsername();
+        byte[] prefixBytes;
+        try {
+            prefixBytes = ("MAUDIO:" + senderName + ":").getBytes("UTF-8");
+        } catch (Exception e) { return; }
+
+        byte[] packet = new byte[prefixBytes.length + audioData.length];
+        System.arraycopy(prefixBytes, 0, packet, 0, prefixBytes.length);
+        System.arraycopy(audioData, 0, packet, prefixBytes.length, audioData.length);
+
         for (String username : participants) {
-            if (username.equals(sender.getUser().getUsername())) continue;
+            if (username.equals(senderName)) continue; // NE PAS renvoyer à l'émetteur
             ClientHandler target = clientMap.get(username);
-            if (target != null) target.sendAudioData(audioData);
+            if (target != null) target.sendAudioData(packet);
         }
     }
 
+    // Format : "MVFRAME:<senderUsername>:<jpegbytes>"
     public synchronized void broadcastMeetingVideo(String meetingId, byte[] jpegData, ClientHandler sender) {
         Set<String> participants = activeMeetings.get(meetingId);
         if (participants == null) return;
+
         String senderName = sender.getUser().getUsername();
         byte[] prefixBytes;
         try { prefixBytes = ("MVFRAME:" + senderName + ":").getBytes("UTF-8"); }
         catch (Exception e) { return; }
+
         byte[] packet = new byte[prefixBytes.length + jpegData.length];
         System.arraycopy(prefixBytes, 0, packet, 0, prefixBytes.length);
-        System.arraycopy(jpegData,   0, packet, prefixBytes.length, jpegData.length);
+        System.arraycopy(jpegData, 0, packet, prefixBytes.length, jpegData.length);
+
         for (String username : participants) {
             if (username.equals(senderName)) continue;
             ClientHandler target = clientMap.get(username);

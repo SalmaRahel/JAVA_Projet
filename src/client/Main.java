@@ -15,7 +15,7 @@ public class Main extends Application {
         DatabaseManager.connect();
 
         // Créer le client
-        client = new Client("172.20.10.14", 5000);
+        client = new Client("10.161.90.69", 5000);
 
         // Créer la fenêtre de login
         LoginWindow loginWindow = new LoginWindow(client);

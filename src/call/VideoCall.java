@@ -6,264 +6,142 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.OpenCVFrameGrabber;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
-
 import java.awt.image.BufferedImage;
-
-// VideoCall hérite de Call (classe abstraite).
-// Elle gère les appels VIDÉO (voix + image).
-//
-// En plus de l'audio (géré par AudioCall), VideoCall ajoute
-// la capture et l'affichage de la vidéo via la webcam.
-//
-// Pour capturer la vidéo, on utilise OpenCV via JavaCV.
-// OpenCV est une bibliothèque très puissante de traitement d'image
-// utilisée dans le monde entier (robots, voitures autonomes, etc.)
-//
-// Fonctionnement simplifié :
-//   1. OpenCVFrameGrabber ouvre la webcam
-//   2. Il capture les images (frames) une par une
-//   3. Chaque frame est convertie en BufferedImage (image Java)
-//   4. L'image est envoyée via le Socket à l'autre utilisateur
-//   5. L'autre utilisateur affiche l'image reçue dans sa fenêtre
 
 public class VideoCall extends Call {
 
-    // ============================================================
-    // ATTRIBUTS (correspondent exactement au diagramme de classes)
-    // ============================================================
-
-    // OpenCVFrameGrabber = l'objet qui contrôle la webcam
-    // C'est lui qui capture les images depuis la caméra physique
     private transient OpenCVFrameGrabber videoCapture;
-
-    // Largeur de la vidéo en pixels (640 = qualité standard)
-    private int width;
-
-    // Hauteur de la vidéo en pixels (480 = qualité standard)
-    private int height;
-
-    // Nombre d'images capturées par seconde
-    // 30 FPS = fluide, 15 FPS = acceptable pour un appel
-    private int frameRate;
-
-    // true = la caméra est active, false = caméra éteinte
+    private int width  = 640;
+    private int height = 480;
+    private int frameRate = 30;
     private boolean camOn;
-
-    // Convertisseur : transforme une Frame OpenCV en BufferedImage Java
-    // Nécessaire car Java ne comprend pas directement le format OpenCV
     private transient Java2DFrameConverter converter;
+
+    // transient → null après désérialisation, toujours recréer via getters
     private transient javax.sound.sampled.AudioFormat audioFormat;
     private transient javax.sound.sampled.TargetDataLine audioLine;
     private transient javax.sound.sampled.SourceDataLine speakerLine;
 
-    // ============================================================
-    // CONSTRUCTEUR
-    // ============================================================
-
     public VideoCall(User caller, User called) {
-        // On appelle le constructeur de Call (la classe parent)
         super(caller, called);
-
-        // On initialise le grabber avec la caméra 0
-        // (0 = première webcam détectée sur l'ordinateur)
-        this.videoCapture = null;
-
-        // Résolution standard 640x480 (suffisant pour un appel vidéo)
-        this.width = 640;
-        this.height = 480;
-
-        // 30 images par seconde = vidéo fluide
-        this.frameRate = 30;
-
-        this.camOn = false; // Par défaut la caméra est éteinte
+        this.camOn = false;
         this.converter = new Java2DFrameConverter();
     }
 
-    // ============================================================
-    // IMPLÉMENTATION DE LA MÉTHODE ABSTRAITE
-    // ============================================================
-
-    // On est OBLIGÉ d'implémenter cette méthode car elle est
-    // abstraite dans la classe parent Call
-    @Override
-    public CallType getCallType() {
-        return CallType.VIDEO; // Un VideoCall est toujours de type VIDEO
+    // Jamais accéder à audioFormat directement
+    private javax.sound.sampled.AudioFormat getAudioFormat() {
+        if (audioFormat == null) {
+            audioFormat = new javax.sound.sampled.AudioFormat(
+                    javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED,
+                    44100f, 16, 1, 2, 44100f, false
+            );
+        }
+        return audioFormat;
     }
 
-    // ============================================================
-    // MÉTHODES VIDÉO
-    // ============================================================
+    @Override
+    public CallType getCallType() { return CallType.VIDEO; }
 
-    // Démarrer la capture vidéo depuis la webcam
     public void captureVideo() {
         try {
-            if (videoCapture == null) {
-                videoCapture = new OpenCVFrameGrabber(0);
-            }
-
-            // Configurer la résolution
+            if (videoCapture == null) videoCapture = new OpenCVFrameGrabber(0);
             videoCapture.setImageWidth(width);
             videoCapture.setImageHeight(height);
-
-            // Ouvrir la connexion avec la webcam
             videoCapture.start();
-
             camOn = true;
-            System.out.println("Webcam démarrée !");
-
+            System.out.println("[VIDEO] Webcam démarrée");
         } catch (Exception e) {
-            System.out.println("Erreur ouverture webcam : "
-                    + e.getMessage());
+            System.out.println("[VIDEO] Erreur webcam : " + e.getMessage());
         }
     }
 
-    // Capturer UNE image depuis la webcam
-    // Retourne un BufferedImage (image Java standard)
-    // Cette image sera envoyée via le Socket
     public BufferedImage captureFrame() {
         try {
-            if (!camOn || videoCapture == null) {
-                return null;
-            }
-
-            // Capturer une frame depuis la webcam
+            if (!camOn || videoCapture == null) return null;
             Frame frame = videoCapture.grab();
-
             if (frame != null) {
-                // Convertir la Frame OpenCV en BufferedImage Java
+                if (converter == null) converter = new Java2DFrameConverter();
                 return converter.convert(frame);
             }
-
         } catch (Exception e) {
-            System.out.println("Erreur capture frame : "
-                    + e.getMessage());
+            System.out.println("[VIDEO] Erreur capture : " + e.getMessage());
         }
         return null;
     }
 
-    // Afficher une image reçue depuis le réseau
-    // frame = l'image reçue de l'autre utilisateur via le Socket
-    public void displayVideo() {
-        // L'affichage réel se fait dans CallWindow (interface graphique)
-        // Cette méthode sera appelée par CallWindow
-        System.out.println("Affichage vidéo en cours...");
-    }
-
-    // Activer/désactiver la caméra
     public void toggleCam() {
         if (camOn) {
-            // Éteindre la caméra
-            try {
-                videoCapture.stop();
-                camOn = false;
-                System.out.println("Caméra éteinte !");
-            } catch (Exception e) {
-                System.out.println("Erreur arrêt caméra : "
-                        + e.getMessage());
-            }
+            try { videoCapture.stop(); camOn = false; }
+            catch (Exception e) { System.out.println("[VIDEO] Erreur arrêt : " + e.getMessage()); }
         } else {
-            // Rallumer la caméra
             captureVideo();
         }
     }
 
-    // ============================================================
-    // OVERRIDE DE end() POUR FERMER LA WEBCAM
-    // ============================================================
-
-    // On surcharge end() pour fermer proprement la webcam
-    // quand l'appel vidéo se termine
-    @Override
-    public void end() {
-        super.end(); // On appelle end() de Call pour changer le status
-
-        // On ferme la webcam
-        try {
-            if (camOn && videoCapture != null) {
-                videoCapture.stop();
-                videoCapture.release();
-                camOn = false;
-                System.out.println("Webcam fermée !");
-            }
-        } catch (Exception e) {
-            System.out.println("Erreur fermeture webcam : "
-                    + e.getMessage());
-        }
-    }
-
-    // ============================================================
-    // GETTERS
-    // ============================================================
-
-    public boolean isCamOn() {
-        return camOn;
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public int getFrameRate() {
-        return frameRate;
-    }
-
-    // Capturer une frame et la retourner en bytes
     public byte[] captureFrameBytes() {
         try {
-            if (converter == null) {
-                converter = new Java2DFrameConverter();
-            }
-            if (videoCapture == null || !camOn) {
-                return new byte[0];
-            }
+            if (converter == null) converter = new Java2DFrameConverter();
+            if (videoCapture == null || !camOn) return new byte[0];
+
             Frame frame = videoCapture.grab();
             if (frame == null) return new byte[0];
+
+            // Flip horizontal
+            org.bytedeco.javacv.OpenCVFrameConverter.ToMat matConv =
+                    new org.bytedeco.javacv.OpenCVFrameConverter.ToMat();
+            org.bytedeco.opencv.opencv_core.Mat mat = matConv.convert(frame);
+            org.bytedeco.opencv.global.opencv_core.flip(mat, mat, 1);
+            frame = matConv.convert(mat);
 
             BufferedImage img = converter.convert(frame);
             if (img == null) return new byte[0];
 
+            // Redimensionner 320x240
+            BufferedImage small = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
+            java.awt.Graphics2D g = small.createGraphics();
+            g.drawImage(img, 0, 0, 320, 240, null);
+            g.dispose();
+
+            // Compression JPEG 40%
+            javax.imageio.ImageWriter writer =
+                    javax.imageio.ImageIO.getImageWritersByFormatName("jpg").next();
+            javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
+            param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(0.4f);
+
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-            javax.imageio.ImageIO.write(img, "jpg", baos);
+            javax.imageio.stream.ImageOutputStream ios =
+                    javax.imageio.ImageIO.createImageOutputStream(baos);
+            writer.setOutput(ios);
+            writer.write(null, new javax.imageio.IIOImage(small, null, null), param);
+            ios.close();
             return baos.toByteArray();
 
-        } catch (Exception e) {
-            return new byte[0];
-        }
+        } catch (Exception e) { return new byte[0]; }
     }
-    // ============================================================
-    // MÉTHODE toString()
-    // ============================================================
 
     public void captureAudio() {
         try {
-            if (audioFormat == null) {
-                audioFormat = new javax.sound.sampled.AudioFormat(
-                        javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED,
-                        44100, 16, 1, 2, 44100, false
-                );
-            }
+            if (audioLine != null && audioLine.isOpen()) return;
             javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(
-                    javax.sound.sampled.TargetDataLine.class, audioFormat
+                    javax.sound.sampled.TargetDataLine.class, getAudioFormat()
             );
-            audioLine = (javax.sound.sampled.TargetDataLine) javax.sound.sampled.AudioSystem.getLine(info);
-            audioLine.open(audioFormat);
+            audioLine = (javax.sound.sampled.TargetDataLine)
+                    javax.sound.sampled.AudioSystem.getLine(info);
+            audioLine.open(getAudioFormat());
             audioLine.start();
-            System.out.println("Audio vidéo démarré !");
+            System.out.println("[VIDEO] Audio démarré");
         } catch (Exception e) {
-            System.out.println("Erreur audio : " + e.getMessage());
+            System.out.println("[VIDEO] Erreur audio : " + e.getMessage());
         }
     }
 
     public byte[] readAudioData() {
         if (audioLine == null || !audioLine.isOpen()) return new byte[0];
-        int frameSize = audioLine.getFormat().getFrameSize();
-        int bufferSize = 4096 - (4096 % frameSize);
-        byte[] buffer = new byte[bufferSize];
-        int bytesRead = audioLine.read(buffer, 0, bufferSize);
+        int frameSize = getAudioFormat().getFrameSize();
+        int bufSize = 4096 - (4096 % frameSize);
+        byte[] buffer = new byte[bufSize];
+        int bytesRead = audioLine.read(buffer, 0, bufSize);
         if (bytesRead > 0) {
             byte[] result = new byte[bytesRead];
             System.arraycopy(buffer, 0, result, 0, bytesRead);
@@ -273,40 +151,52 @@ public class VideoCall extends Call {
     }
 
     public void playAudioData(byte[] data) {
+        if (data == null || data.length == 0) return;
         try {
-            if (audioFormat == null) {
-                audioFormat = new javax.sound.sampled.AudioFormat(
-                        javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED,
-                        44100, 16, 1, 2, 44100, false
-                );
-            }
             if (speakerLine == null || !speakerLine.isOpen()) {
                 javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(
-                        javax.sound.sampled.SourceDataLine.class, audioFormat
+                        javax.sound.sampled.SourceDataLine.class, getAudioFormat()
                 );
-                speakerLine = (javax.sound.sampled.SourceDataLine) javax.sound.sampled.AudioSystem.getLine(info);
-                speakerLine.open(audioFormat);
+                speakerLine = (javax.sound.sampled.SourceDataLine)
+                        javax.sound.sampled.AudioSystem.getLine(info);
+                speakerLine.open(getAudioFormat(), 32768); // buffer anti-jitter
                 speakerLine.start();
+                System.out.println("[VIDEO] Haut-parleur ouvert");
             }
             int frameSize = speakerLine.getFormat().getFrameSize();
-            int validLength = data.length - (data.length % frameSize);
-            if (validLength > 0) {
-                speakerLine.write(data, 0, validLength);
-            }
+            int validLen = data.length - (data.length % frameSize);
+            if (validLen > 0) speakerLine.write(data, 0, validLen);
         } catch (Exception e) {
-            System.out.println(" Erreur lecture audio : " + e.getMessage());
+            System.out.println("[VIDEO] Erreur lecture audio : " + e.getMessage());
         }
     }
 
     @Override
+    public void end() {
+        super.end();
+        try {
+            if (camOn && videoCapture != null) {
+                videoCapture.stop(); videoCapture.release(); camOn = false;
+            }
+        } catch (Exception e) { System.out.println("[VIDEO] Erreur fermeture webcam : " + e.getMessage()); }
+        if (audioLine != null && audioLine.isOpen()) {
+            audioLine.stop(); audioLine.close(); audioLine = null;
+        }
+        if (speakerLine != null && speakerLine.isOpen()) {
+            speakerLine.drain(); speakerLine.stop(); speakerLine.close(); speakerLine = null;
+        }
+        System.out.println("[VIDEO] Ressources libérées");
+    }
+
+    public boolean isCamOn() { return camOn; }
+    public int getWidth()    { return width; }
+    public int getHeight()   { return height; }
+    public int getFrameRate(){ return frameRate; }
+
+    @Override
     public String toString() {
-        return "VideoCall{" +
-                "id='" + id + '\'' +
-                ", caller=" + caller.getUsername() +
-                ", called=" + called.getUsername() +
-                ", status=" + status +
-                ", camOn=" + camOn +
-                ", resolution=" + width + "x" + height +
-                '}';
+        return "VideoCall{id='" + id + "', caller=" + caller.getUsername()
+                + ", called=" + called.getUsername() + ", status=" + status
+                + ", camOn=" + camOn + "}";
     }
 }
