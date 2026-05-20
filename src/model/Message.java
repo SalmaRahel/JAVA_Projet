@@ -37,7 +37,32 @@ public class Message implements Serializable {
     protected MessageType type;
 
     // true = le destinataire a lu le message, false = non lu
-    protected boolean isRead;
+    protected String deliveryStatus = "SENT"; // SENT, DELIVERED, SEEN
+
+    public String getDeliveryStatus() { return deliveryStatus; }
+    public void setDeliveryStatus(String status) { this.deliveryStatus = status; }
+
+    // Garder aussi isRead pour compatibilité :
+    public boolean isRead() { return "SEEN".equals(deliveryStatus); }
+    public void setRead(boolean isRead) { if (isRead) this.deliveryStatus = "SEEN"; }
+
+    // Dans la classe Message, après isRead :
+    protected boolean isDeleted = false;
+    protected boolean isEdited = false;
+    protected boolean isPinned = false;
+    protected String replyToId = null; // ID du message auquel on répond
+
+    public boolean isDeleted() { return isDeleted; }
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
+
+    public boolean isEdited() { return isEdited; }
+    public void setEdited(boolean edited) { isEdited = edited; }
+
+    public boolean isPinned() { return isPinned; }
+    public void setPinned(boolean pinned) { isPinned = pinned; }
+
+    public String getReplyToId() { return replyToId; }
+    public void setReplyToId(String replyToId) { this.replyToId = replyToId; }
 
     // ============================================================
     // CONSTRUCTEUR
@@ -52,7 +77,6 @@ public class Message implements Serializable {
         this.receiver = receiver;
         this.timestamp = new Date(); // Date et heure actuelles automatiquement
         this.type = type;
-        this.isRead = false; // Par défaut le message n'est pas lu
     }
 
     // Constructeur secondaire : utilisé quand on charge un message depuis la BD
@@ -65,7 +89,7 @@ public class Message implements Serializable {
         this.receiver = receiver;
         this.timestamp = timestamp;
         this.type = type;
-        this.isRead = false;
+
     }
 
     // ============================================================
@@ -112,13 +136,7 @@ public class Message implements Serializable {
         this.type = type;
     }
 
-    public boolean isRead() {
-        return isRead;
-    }
 
-    public void setRead(boolean isRead) {
-        this.isRead = isRead;
-    }
 
     // ============================================================
     // MÉTHODE toString()
